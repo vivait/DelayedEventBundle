@@ -7,6 +7,7 @@ use Symfony\Component\EventDispatcher\Event;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
+use Vivait\DelayedEventBundle\IntervalCalculator;
 use Vivait\DelayedEventBundle\Queue\QueueInterface;
 use Vivait\DelayedEventBundle\Serializer\SerializerInterface;
 
@@ -61,6 +62,7 @@ class DelayedEventDispatcher
      */
     public function addListener($eventName, $listener, $delay, $priority = 0)
     {
+        $delay = IntervalCalculator::convertDelayToInterval($delay);
         $delayedEventName = $this->generateDelayedEventName($eventName, $delay);
 
         // Add a listener for the delayed event
@@ -86,6 +88,7 @@ class DelayedEventDispatcher
             throw new \BadMethodCallException('Tried to add a service as a listener to a container unaware dispatcher');
         }
 
+        $delay = IntervalCalculator::convertDelayToInterval($delay);
         $delayedEventName = $this->generateDelayedEventName($eventName, $delay);
 
         $this->dispatcher->addListenerService($delayedEventName, $callback, $priority);
@@ -102,6 +105,7 @@ class DelayedEventDispatcher
      */
     private function addListenerTrigger($eventName, $delay)
     {
+        $delay = IntervalCalculator::convertDelayToInterval($delay);
         $delayedEventName = $this->generateDelayedEventName($eventName, $delay);
 
         // Don't allow more than one trigger listener
@@ -178,6 +182,8 @@ class DelayedEventDispatcher
      */
     public function removeListener($eventName, $listener, $delay)
     {
+        $delay = IntervalCalculator::convertDelayToInterval($delay);
+
         if (is_array($eventName)) {
             array_walk(
                 $eventName,
@@ -204,17 +210,18 @@ class DelayedEventDispatcher
      * Removes an event subscriber.
      *
      * @param EventSubscriberInterface $subscriber The subscriber
-     * @param int          $delay The event delay, in seconds
      */
-    public function removeSubscriber(EventSubscriberInterface $subscriber, $delay)
+    public function removeSubscriber(EventSubscriberInterface $subscriber)
     {
         foreach ($subscriber->getSubscribedEvents() as $eventName => $params) {
-            if (is_array($params) && is_array($params[0])) {
-                foreach ($params as $listener) {
-                    $this->removeListener($eventName, array($subscriber, $listener[0]), $delay);
-                }
+            if (is_string($params)) {
+                throw new \InvalidArgumentException(sprintf('Subscribed events provides string "%s" when array of at least ["%s", $delay] is required', $params));
+            } elseif (is_string($params[0])) {
+                $this->removeListener($eventName, array($subscriber, $params[0]), $params[1], isset($params[2]) ? $params[2] : 0);
             } else {
-                $this->removeListener($eventName, array($subscriber, is_string($params) ? $params : $params[0]), $delay);
+                foreach ($params as $listener) {
+                    $this->removeListener($eventName, array($subscriber, $listener[0]), $listener[1], isset($listener[2]) ? $listener[2] : 0);
+                }
             }
         }
     }
@@ -228,6 +235,8 @@ class DelayedEventDispatcher
      */
     public function getListeners($eventName = null, $delay = null)
     {
+        $delay = IntervalCalculator::convertDelayToInterval($delay);
+
         if ($delay !== null && $eventName !== null) {
             $eventName = $this->generateDelayedEventName($eventName, $delay);
         }
@@ -244,6 +253,8 @@ class DelayedEventDispatcher
      */
     public function hasListeners($eventName = null, $delay = null)
     {
+        $delay = IntervalCalculator::convertDelayToInterval($delay);
+
         if ($delay !== null && $eventName !== null) {
             $eventName = $this->generateDelayedEventName($eventName, $delay);
         }
@@ -266,6 +277,7 @@ class DelayedEventDispatcher
      */
     protected function removeListenerTrigger($eventName, $delay)
     {
+        $delay = IntervalCalculator::convertDelayToInterval($delay);
         $delayedEventName = $this->generateDelayedEventName($eventName, $delay);
 
         if ($this->hasListenerTrigger($delayedEventName)) {
@@ -278,8 +290,18 @@ class DelayedEventDispatcher
      * @param $delay
      * @return string
      */
-    public function generateDelayedEventName($eventName, $delay)
+    public function generateDelayedEventName($eventName, \DateInterval $delay)
     {
-        return sprintf('delayed_event_%s_%s', $eventName, $delay);
+        // Months & years are ambiguous so lets not convert them
+        $delayString = sprintf('PT%sY%sM%sS', $delay->y, $delay->m, $this->convertIntervalToFactors($delay));
+
+        return sprintf('%s_delayed_by_%s', $eventName, $delayString);
+    }
+
+    private function convertIntervalToFactors(\DateInterval $interval) {
+        $days    = $interval->d;
+        $hours   = $interval->h + ($days * 24);
+        $minutes = $interval->i + ($hours * 60);
+        return     $interval->s + ($minutes * 60);
     }
 }

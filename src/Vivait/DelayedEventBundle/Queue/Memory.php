@@ -2,46 +2,34 @@
 
 namespace Vivait\DelayedEventBundle\Queue;
 
-use Vivait\DelayedEventBundle\Queue\Beanstalkd\Job;
+use Vivait\DelayedEventBundle\IntervalCalculator;
 
-class Beanstalkd implements QueueInterface
+/**
+ * @internal Used only for testing
+ */
+class Memory implements QueueInterface
 {
-    const PRIORITY = 20;
-    const TTL = 3600;
+    private $jobs = [];
 
-    protected $beanstalk;
-    protected $tube;
-
-    /**
-     * @param \Pheanstalk_PheanstalkInterface $beanstalk
-     * @param string $tube
-     */
-    public function __construct($beanstalk, $tube)
+    public function put($eventName, $event, \DateInterval $delay = null)
     {
-        $this->beanstalk = $beanstalk;
-        $this->tube = $tube;
-    }
-
-    public function put($eventName, $event, $delay = 0)
-    {
-        $job = json_encode($eventName, $event);
-
-        $this->beanstalk->useTube($this->tube);
-        $this->beanstalk->put($job, self::PRIORITY, $delay, self::TTL);
+        $seconds = IntervalCalculator::convertDateIntervalToSeconds($delay);
+        $this->jobs[$seconds][] = new Job($event, $eventName);
     }
 
     public function get()
     {
-        $this->beanstalk->watch($this->tube);
-        $job = $this->beanstalk->reserve();
-
-        list($inspection, $data) = @json_decode($job->getData(), true);
-
-        return new Job($job->getId(), $data, $inspection);
+        $currentTime = key($this->jobs);
+        return array_shift($this->jobs[$currentTime]);
     }
 
     public function delete($job)
     {
-        $this->beanstalk->delete($job);
+        foreach ($this->jobs as $delay => $jobs) {
+            if (($key = array_search($job, $jobs)) !== false) {
+                unset($this->jobs[$delay][$key]);
+            }
+        }
     }
+
 }

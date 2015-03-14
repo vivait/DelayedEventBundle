@@ -22,17 +22,18 @@ class SerializerSpec extends ObjectBehavior
         $serialized->shouldBeString();
 
         $deserialized
-            ->shouldBeAnInstanceOf($class)
             ->shouldBeLike(new Event);
     }
 
     function it_runs_a_transformer_on_a_property(TransformerInterface $transformer) {
         $class = __NAMESPACE__ .'\Event';
 
-        $this->beConstructedWith([$transformer]);
+        $this->beConstructedWith([
+            'spokeNumber' => $transformer
+        ]);
 
-        $transformer->supports(Argument::which('getName', 'int'))->willReturn(true);
-        $transformer->supports(Argument::which('getName', 'string'))->willReturn(false);
+        $transformer->supports(Argument::which('getName', 'int'), 2)->willReturn(true);
+        $transformer->supports(Argument::which('getName', 'string'), 'Test')->willReturn(false);
 
         $transformer->transform(2)->willReturn('two')->shouldBeCalled();
         $transformer->reverseTransform('two')->willReturn('2')->shouldBeCalled();
@@ -43,7 +44,6 @@ class SerializerSpec extends ObjectBehavior
         $serialized->shouldBeString();
 
         $deserialized
-            ->shouldBeAnInstanceOf($class)
             ->shouldBeLike(new Event);
     }
 

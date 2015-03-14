@@ -2,6 +2,7 @@
 
 namespace Vivait\DelayedEventBundle\Queue;
 
-class JobInterface {
-
+interface JobInterface {
+    public function getEventName();
+    public function getEvent();
 }

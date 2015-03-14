@@ -2,86 +2,153 @@
 
 namespace Tests\Vivait\DelayedEventBundle;
 
-use Matthias\SymfonyConfigTest\PhpUnit\AbstractConfigurationTestCase;
-use Symfony\Component\Config\Definition\Processor;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
-use Symfony\Component\Yaml\Yaml;
-use Vivait\DelayedEventBundle\DependencyInjection\Configuration;
+use Symfony\Component\DependencyInjection\Definition;
+use Symfony\Component\DependencyInjection\Reference;
+use Vivait\DelayedEventBundle\DependencyInjection\RegisterListenersPass;
+use Vivait\DelayedEventBundle\DependencyInjection\VivaitDelayedEventExtension;
+use Vivait\DelayedEventBundle\EventDispatcher\DelayedEventDispatcher;
 
-class ConfigurationTest extends AbstractConfigurationTestCase
+class ListenerPassTest extends \PHPUnit_Framework_TestCase
 {
     /**
-     * Return the instance of ConfigurationInterface that should be used by the
-     * Configuration-specific assertions in this test-case
-     *
-     * @return \Symfony\Component\Config\Definition\ConfigurationInterface
+     * @var ContainerBuilder
      */
-    protected function getConfiguration()
+    private $container;
+
+    /**
+     * @var RegisterListenersPass
+     */
+    private $listenerPass;
+
+    /**
+     * @return DelayedEventDispatcher
+     */
+    private function getDispatcher()
     {
-        $container = new ContainerBuilder();
-
-        $container->register('vivait_inspector.queue.test_queue');
-        $container->register('doctrine_cache.providers.test_storage_cache');
-
-        return new Configuration($container);
+        return $this->container->get('delayed_event_dispatcher');
     }
 
-    public function testEmptyConfiguration()
-    {
-        $this->assertConfigurationIsValid(
+    function setUp() {
+        $this->container = new ContainerBuilder();
+        $this->listenerPass = new RegisterListenersPass();
+
+        $extension = new VivaitDelayedEventExtension();
+        $extension->load([
             [
-                []
+                'queue_transport' => 'memory'
             ]
-        );
+        ], $this->container);
+
+        // Register the event dispatcher service
+        $this->container->setDefinition('event_dispatcher', new Definition(
+            'Symfony\Component\EventDispatcher\ContainerAwareEventDispatcher',
+            array(new Reference('service_container'))
+        ));
     }
 
-    public function testValidDrivers()
+    public function testListener()
     {
-        $this->assertConfigurationIsValid(
-            [
-                [
-                    'queue_transport' => 'test_queue',
-                    'storage' => 'test_storage'
-                ]
-            ]
-        );
+        $this->container->register('test_listener', 'stdClass')
+                        ->addTag('delayed_event.event_listener', [
+                            'event' => 'test.event',
+                            'method' => 'onMyEvent',
+                            'delay' => '10'
+                        ]);
+
+        $this->listenerPass->process($this->container);
+
+        $dispatcher = $this->getDispatcher();
+        \PHPUnit_Framework_Assert::assertTrue($dispatcher->hasListeners('test.event', 10));
     }
 
-    public function testInvalidDrivers()
+    public function testDateParsing()
     {
-        $this->assertConfigurationIsInvalid(
-            [
-                [
-                    'queue_transport' => 'wrong_queue',
-                    'storage' => 'test_storage'
-                ]
-            ],
-            'Invalid queue transport'
-        );
+        $this->container->register('test_listener', 'stdClass')
+                        ->addTag('delayed_event.event_listener', [
+                            'event' => 'test.event',
+                            'method' => 'onMyEvent',
+                            'delay' => '1 day'
+                        ]);
 
-        $this->assertConfigurationIsInvalid(
-            [
-                [
-                    'queue_transport' => 'test_queue',
-                    'storage' => 'wrong_storage'
-                ]
-            ],
-            'Invalid storage'
-        );
+        $this->listenerPass->process($this->container);
+        $dispatcher = $this->getDispatcher();
 
+        // Test the various
+        \PHPUnit_Framework_Assert::assertTrue($dispatcher->hasListeners('test.event', '1 day'));
+        \PHPUnit_Framework_Assert::assertTrue($dispatcher->hasListeners('test.event', '24 hours'));
+        \PHPUnit_Framework_Assert::assertTrue($dispatcher->hasListeners('test.event', '1440 minutes'));
+        \PHPUnit_Framework_Assert::assertTrue($dispatcher->hasListeners('test.event', '86400 seconds'));
+        \PHPUnit_Framework_Assert::assertTrue($dispatcher->hasListeners('test.event', 86400));
+        \PHPUnit_Framework_Assert::assertTrue($dispatcher->hasListeners('test.event', new \DateInterval('P1D')));
+        \PHPUnit_Framework_Assert::assertTrue($dispatcher->hasListeners('test.event', new \DateInterval('PT24H')));
+
+        // Just to confirm it wasn't all a fluke
+        \PHPUnit_Framework_Assert::assertFalse($dispatcher->hasListeners('test.event', 76400));
     }
 
-    public function testArrayStorageDriverIsBlocked()
+    public function testListenerWithoutMethod()
     {
-        // Don't accept the array storage option, since it's per-request
-        $this->assertConfigurationIsInvalid(
-            [
-                [
-                    'queue_transport' => 'test_queue',
-                    'storage' => 'array'
-                ]
-            ],
-            'Invalid storage'
-        );
+        $this->container->register('test_listener', 'stdClass')
+                        ->addTag('delayed_event.event_listener', [
+                            'event' => 'test.event',
+                            'delay' => '10'
+                        ]);
+
+
+        $this->listenerPass->process($this->container);
+
+        $dispatcher = $this->getDispatcher();
+        $listener = $dispatcher->getListeners('test.event', 10);
+
+        // Check it auto-generated the listener method
+        \PHPUnit_Framework_Assert::assertSame('onTestEvent', $listener[0][1]);
+    }
+
+    public function testListenerWithPriority()
+    {
+        $this->container->register('test_listener', 'stdClass')
+                        ->addTag('delayed_event.event_listener', [
+                            'event' => 'test.event',
+                            'delay' => 15,
+                            'priority' => 5
+                        ]);
+
+        $this->container->register('higher_priority_listener', 'stdClass')
+                        ->addTag('delayed_event.event_listener', [
+                            'event' => 'test.event',
+                            'method' => 'onHighPriorityEvent',
+                            'delay' => 15,
+                            'priority' => 10
+                        ]);
+
+        $this->listenerPass->process($this->container);
+
+        $dispatcher = $this->getDispatcher();
+        $listener = $dispatcher->getListeners('test.event', 15);
+
+        // Check the high priority event listener is first
+        \PHPUnit_Framework_Assert::assertCount(2, $listener);
+        \PHPUnit_Framework_Assert::assertSame('onHighPriorityEvent', $listener[0][1]);
+    }
+
+    public function testSubscriber()
+    {
+        $class = 'Tests\Vivait\DelayedEventBundle\Mocks\TestSubscriber';
+        $id = 'test_subscriber';
+
+        $this->container->register($id, $class)
+                        ->addTag('delayed_event.event_subscriber', [
+                            'delay' => 10,
+                            'priority' => 5
+                        ]);
+
+
+        $this->listenerPass->process($this->container);
+
+        $dispatcher = $this->getDispatcher();
+
+        \PHPUnit_Framework_Assert::assertCount(2, $dispatcher->getListeners('test.event1', 10));
+        \PHPUnit_Framework_Assert::assertCount(1, $dispatcher->getListeners('test.event2', 5));
     }
 }

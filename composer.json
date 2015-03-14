@@ -26,9 +26,9 @@
         "doctrine/mongodb-odm-bundle": "~3.0@dev"
     },
     "autoload": {
-        "psr-4" : { "Tests\\Vivait\\DelayedEventBundle\\" : "" },
         "psr-0": {
-            "Vivait\\DelayedEventBundle\\": "src/"
+            "Vivait\\DelayedEventBundle\\": "src/",
+            "Tests\\Vivait\\DelayedEventBundle\\" : ""
         }
     }
 }

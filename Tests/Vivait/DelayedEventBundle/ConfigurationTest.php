@@ -20,8 +20,8 @@ class ConfigurationTest extends AbstractConfigurationTestCase
     {
         $container = new ContainerBuilder();
 
-        $container->register('vivait_inspector.queue.test_queue');
-        $container->register('vivait_inspector.serializer.test_serializer');
+        $container->register('vivait_delayed_event.queue.test_queue');
+        $container->register('doctrine_cache.providers.test_storage_cache');
 
         return new Configuration($container);
     }
@@ -41,7 +41,7 @@ class ConfigurationTest extends AbstractConfigurationTestCase
             [
                 [
                     'queue_transport' => 'test_queue',
-                    'serializer' => 'test_serializer'
+                    //'storage' => 'test_storage'
                 ]
             ]
         );
@@ -49,24 +49,39 @@ class ConfigurationTest extends AbstractConfigurationTestCase
 
     public function testInvalidDrivers()
     {
-        $this->assertConfigurationIsInvalid(
-            [
-                [
-                    'queue_transport' => 'wrong_queue',
-                    'serializer' => 'test_serializer'
-                ]
-            ],
-            'Invalid queue transport'
-        );
+//        $this->assertConfigurationIsInvalid(
+//            [
+//                [
+//                    'queue_transport' => 'wrong_queue',
+//                    //'storage' => 'test_storage'
+//                ]
+//            ],
+//            'Invalid queue transport'
+//        );
 
-        $this->assertConfigurationIsInvalid(
-            [
-                [
-                    'queue_transport' => 'test_queue',
-                    'serializer' => 'wrong_serializer'
-                ]
-            ],
-            'Invalid serializer'
-        );
+//        $this->assertConfigurationIsInvalid(
+//            [
+//                [
+//                    'queue_transport' => 'test_queue',
+//                    'storage' => 'wrong_storage'
+//                ]
+//            ],
+//            'Invalid storage'
+//        );
+
     }
+
+//    public function testArrayStorageDriverIsBlocked()
+//    {
+//        // Don't accept the array storage option, since it's per-request
+//        $this->assertConfigurationIsInvalid(
+//            [
+//                [
+//                    'queue_transport' => 'test_queue',
+//                    'storage' => 'array'
+//                ]
+//            ],
+//            'Invalid storage'
+//        );
+//    }
 }

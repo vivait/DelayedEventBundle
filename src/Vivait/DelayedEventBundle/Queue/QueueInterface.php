@@ -12,7 +12,7 @@ use Vivait\DelayedEventBundle\Queue\Beanstalkd\Job;
 
 interface QueueInterface {
 
-    public function put($eventName, $data, $delay = 0);
+    public function put($eventName, $data, \DateInterval $delay = null);
 
     public function get();
 

@@ -14,16 +14,6 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 class Configuration implements ConfigurationInterface
 {
     /**
-     * @var ContainerInterface
-     */
-    private $container;
-
-    function __construct(ContainerInterface $container)
-    {
-        $this->container = $container;
-    }
-
-    /**
      * {@inheritDoc}
      */
     public function getConfigTreeBuilder()
@@ -34,17 +24,20 @@ class Configuration implements ConfigurationInterface
         $rootNode
             ->children()
                 ->scalarNode('queue_transport')
-                    ->validate()
-                    ->ifTrue(function($value) { return !$this->container->hasDefinition('vivait_inspector.queue.'. $value); })
-                        ->thenInvalid('Invalid queue transport "%s"')
-                    ->end()
+                    ->defaultValue('beanstalkd')
+//                    ->validate()
+//                    ->ifTrue(function($value) { return !$this->container->hasDefinition('vivait_delayed_event.queue.'. $value); })
+//                        ->thenInvalid('Invalid queue transport "%s"')
+//                    ->end()
                 ->end()
-                ->scalarNode('serializer')
-                    ->validate()
-                    ->ifTrue(function($value) { return !$this->container->hasDefinition('vivait_inspector.serializer.'. $value); })
-                        ->thenInvalid('Invalid serializer "%s"')
-                    ->end()
-                ->end()
+//                ->scalarNode('storage')
+//                    ->validate()
+//                    ->ifTrue(function($value) { return $value == 'array'; })
+//                        ->thenInvalid('Array storage provider is not supported')
+//                    ->ifTrue(function($value) { return !$this->container->hasDefinition(sprintf('doctrine_cache.providers.%s_cache', $value)); })
+//                        ->thenInvalid('Invalid storage "%s"')
+//                    ->end()
+//                ->end()
             ->end()
         ->end();
 

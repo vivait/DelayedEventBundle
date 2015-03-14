@@ -9,6 +9,7 @@ use Symfony\Component\EventDispatcher\Event;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
+use Tests\Vivait\DelayedEventBundle\Mocks\TestSubscriber;
 use Vivait\DelayedEventBundle\EventDispatcher\DelayedEventDispatcher;
 use Vivait\DelayedEventBundle\Queue\QueueInterface;
 use Vivait\DelayedEventBundle\Serializer\SerializerInterface;
@@ -119,30 +120,6 @@ class DelayedEventDispatcherSpec extends ObjectBehavior
 
         // Check all listeners have been removed
         $this->shouldNotHaveListeners($eventName, $delay);
-    }
-}
-
-class TestSubscriber implements EventSubscriberInterface
-{
-    public static function getSubscribedEvents()
-    {
-        return array(
-            'test.event1' => [
-                ['testEvent', 10],
-                ['anotherTest', 10, 1]
-            ],
-            'test.event2' => ['testEvent', 5],
-        );
-    }
-
-    public function anotherTestEvent($args)
-    {
-        // Do nothing
-    }
-
-    public function testEvent($args)
-    {
-        // Do nothing
     }
 }
 

@@ -1,15 +1,6 @@
 <?php
 
-/*
- * This file is part of the Symfony package.
- *
- * (c) Fabien Potencier <fabien@symfony.com>
- *
- * For the full copyright and license information, please view the LICENSE
- * file that was distributed with this source code.
- */
-
-namespace Symfony\Component\EventDispatcher\DependencyInjection;
+namespace Vivait\DelayedEventBundle\DependencyInjection;
 
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
@@ -41,7 +32,7 @@ class RegisterListenersPass implements CompilerPassInterface
      * @param string $listenerTag       Tag name used for listener
      * @param string $subscriberTag     Tag name used for subscribers
      */
-    public function __construct($dispatcherService = 'event_dispatcher', $listenerTag = 'kernel.event_listener', $subscriberTag = 'kernel.event_subscriber')
+    public function __construct($dispatcherService = 'delayed_event_dispatcher', $listenerTag = 'delayed_event.event_listener', $subscriberTag = 'delayed_event.event_subscriber')
     {
         $this->dispatcherService = $dispatcherService;
         $this->listenerTag = $listenerTag;
@@ -69,6 +60,10 @@ class RegisterListenersPass implements CompilerPassInterface
             foreach ($events as $event) {
                 $priority = isset($event['priority']) ? $event['priority'] : 0;
 
+                if (!isset($event['delay'])) {
+                    throw new \InvalidArgumentException(sprintf('Service "%s" must define the "delay" attribute on "%s" tags.', $id, $this->listenerTag));
+                }
+
                 if (!isset($event['event'])) {
                     throw new \InvalidArgumentException(sprintf('Service "%s" must define the "event" attribute on "%s" tags.', $id, $this->listenerTag));
                 }
@@ -81,7 +76,7 @@ class RegisterListenersPass implements CompilerPassInterface
                     $event['method'] = preg_replace('/[^a-z0-9]/i', '', $event['method']);
                 }
 
-                $definition->addMethodCall('addListenerService', array($event['event'], array($id, $event['method']), $priority));
+                $definition->addMethodCall('addListenerService', array($event['event'], array($id, $event['method']), $event['delay'], $priority));
             }
         }
 
