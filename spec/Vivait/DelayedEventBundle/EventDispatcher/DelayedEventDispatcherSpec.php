@@ -11,6 +11,7 @@ use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Tests\Vivait\DelayedEventBundle\Mocks\TestSubscriber;
 use Vivait\DelayedEventBundle\EventDispatcher\DelayedEventDispatcher;
+use Vivait\DelayedEventBundle\IntervalCalculator;
 use Vivait\DelayedEventBundle\Queue\QueueInterface;
 use Vivait\DelayedEventBundle\Serializer\SerializerInterface;
 
@@ -30,7 +31,7 @@ class DelayedEventDispatcherSpec extends ObjectBehavior
     }
 
     function it_should_add_to_the_queue_when_an_event_is_triggered(QueueInterface $queue) {
-        $delay = 10;
+        $delay = IntervalCalculator::convertDelayToInterval(10);
         $eventName = 'test.event';
         $delayedEventName = $this->generateDelayedEventName($eventName, $delay);
 
@@ -43,7 +44,7 @@ class DelayedEventDispatcherSpec extends ObjectBehavior
     function it_should_add_to_the_queue_when_an_event_is_triggered_via_a_subscriber(QueueInterface $queue) {
         $this->addSubscriber(new TestSubscriber());
 
-        $delay = 10;
+        $delay = IntervalCalculator::convertDelayToInterval(10);
         $eventName = 'test.event1';
         $delayedEventName = $this->generateDelayedEventName($eventName, $delay);
 
@@ -51,7 +52,7 @@ class DelayedEventDispatcherSpec extends ObjectBehavior
         $queue->put($delayedEventName, null, $delay)->shouldBeCalled();
         $this->dispatcher->dispatch($eventName, new Event);
 
-        $delay = 5;
+        $delay = IntervalCalculator::convertDelayToInterval(5);
         $eventName = 'test.event2';
         $delayedEventName = $this->generateDelayedEventName($eventName, $delay);
 
@@ -64,7 +65,7 @@ class DelayedEventDispatcherSpec extends ObjectBehavior
         // Convert the dispatcher in to a spy
         $this->beConstructedWith($serializer, $queue, $dispatcher);
 
-        $delay = 10;
+        $delay = IntervalCalculator::convertDelayToInterval(10);
         $eventName = 'test.event1';
         $delayedEventName = $this->generateDelayedEventName($eventName, $delay);
 
@@ -82,7 +83,7 @@ class DelayedEventDispatcherSpec extends ObjectBehavior
     }
 
     function it_should_serialize_an_event(QueueInterface $queue, SerializerInterface $serializer) {
-        $delay = 5;
+        $delay = IntervalCalculator::convertDelayToInterval(5);
         $eventName = 'test.event2';
         $event = new ComplexEvent;
         $delayedEventName = $this->generateDelayedEventName($eventName, $delay);
@@ -100,7 +101,7 @@ class DelayedEventDispatcherSpec extends ObjectBehavior
 
     function it_should_remove_the_trigger_listener_when_removing_last_listener() {
         $eventName = 'test.event3';
-        $delay = 5;
+        $delay = IntervalCalculator::convertDelayToInterval(5);
 
         $this->addListener($eventName, 'echo', $delay);
         $this->addListener($eventName, 'printf', $delay);

@@ -196,7 +196,6 @@ class DelayedEventDispatcher
         }
 
         $delayedEventName = $this->generateDelayedEventName($eventName, $delay);
-
         // Remove the listener for the delayed event
         $this->dispatcher->removeListener($delayedEventName, $listener);
 
@@ -235,9 +234,8 @@ class DelayedEventDispatcher
      */
     public function getListeners($eventName = null, $delay = null)
     {
-        $delay = IntervalCalculator::convertDelayToInterval($delay);
-
         if ($delay !== null && $eventName !== null) {
+            $delay = IntervalCalculator::convertDelayToInterval($delay);
             $eventName = $this->generateDelayedEventName($eventName, $delay);
         }
 
@@ -253,9 +251,8 @@ class DelayedEventDispatcher
      */
     public function hasListeners($eventName = null, $delay = null)
     {
-        $delay = IntervalCalculator::convertDelayToInterval($delay);
-
         if ($delay !== null && $eventName !== null) {
+            $delay = IntervalCalculator::convertDelayToInterval($delay);
             $eventName = $this->generateDelayedEventName($eventName, $delay);
         }
 
