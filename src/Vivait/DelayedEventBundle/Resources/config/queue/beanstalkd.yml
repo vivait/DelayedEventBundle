@@ -1,0 +1,7 @@
+services:
+  vivait_delayed_event.queue:
+    alias: vivait_delayed_event.queue.beanstalk
+
+  vivait_delayed_event.queue.beanstalk:
+    class: Vivait\DelayedEventBundle\Queue\Beanstalk
+    arguments: ['@leezy.pheanstalk']

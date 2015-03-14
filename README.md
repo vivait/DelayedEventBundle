@@ -1,5 +1,6 @@
 Delayed Event Bundle
 ===============
+Triggers a Symfony event an arbitrary period after the original event
 
 # Configure the service
 ```yaml

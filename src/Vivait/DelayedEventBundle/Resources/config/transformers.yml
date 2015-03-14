@@ -1,0 +1,6 @@
+services:
+  vivait_inspector.storage:
+    alias: vivait_inspector.storage.doctrineorm
+
+  vivait_inspector.storage.doctrineorm:
+    class: Vivait\DelayedEventBundle\Serializer\DoctrineORM

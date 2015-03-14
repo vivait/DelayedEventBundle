@@ -1,0 +1,34 @@
+{
+    "name": "vivait/delayed-event-bundle",
+    "description": "A bundle that delays events for a configurable time period (i.e. 24 hours)",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Lewis Wright",
+            "email": "lewis@vivait.co.uk"
+        }
+    ],
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "require": {
+        "php": ">=5.4",
+        "symfony/framework-bundle": "~2.3",
+        "psr/log": "~1.0",
+        "leezy/pheanstalk-bundle": "~2.0"
+    },
+    "require-dev": {
+        "phpspec/phpspec": "dev-master",
+        "phpunit/phpunit": "3.7.*",
+        "behat/behat": "~2.5",
+        "matthiasnoback/symfony-config-test": "~1.0",
+        "doctrine/doctrine-bundle": "~1.2",
+        "doctrine/orm": "~2.2",
+        "doctrine/mongodb-odm-bundle": "~3.0@dev"
+    },
+    "autoload": {
+        "psr-4" : { "Tests\\Vivait\\DelayedEventBundle\\" : "" },
+        "psr-0": {
+            "Vivait\\DelayedEventBundle\\": "src/"
+        }
+    }
+}

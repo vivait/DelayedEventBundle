@@ -1,0 +1,6 @@
+services:
+  vivait_delayed_event.queue:
+    alias: vivait_delayed_event.queue.memory
+
+  vivait_delayed_event.queue.memory:
+    class: Vivait\DelayedEventBundle\Queue\Memory

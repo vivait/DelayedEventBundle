@@ -1,0 +1,17 @@
+parameters:
+ vivait_delayed_event.dispatcher.class: Vivait\DelayedEventBundle\EventDispatcher\DelayedEventDispatcher
+ vivait_delayed_event.serializer.class: Vivait\DelayedEventBundle\Serializer\Serializer
+
+services:
+  vivait_delayed_event.serializer:
+    class: %vivait_delayed_event.serializer.class%
+
+  vivait_delayed_event.dispatcher:
+    class: %vivait_delayed_event.dispatcher.class%
+    arguments:
+      - @vivait_delayed_event.serializer
+      - @vivait_delayed_event.queue
+      - @event_dispatcher
+
+  delayed_event_dispatcher:
+    alias: vivait_delayed_event.dispatcher
