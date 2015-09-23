@@ -93,7 +93,7 @@ class DelayedEventDispatcher
 
     /**
      * @param string $eventName
-     * @param int $delay The event delay, in seconds
+     * @param string|int|\DateInterval $delay The event delay, in seconds
      */
     private function addListenerTrigger($eventName, $delay)
     {
@@ -168,7 +168,7 @@ class DelayedEventDispatcher
      *
      * @param string|array $eventName The event(s) to remove a listener from
      * @param callable     $listener  The listener to remove
-     * @param int          $delay The event delay, in seconds
+     * @param int|string|\DateInterval          $delay The event delay, in seconds
      */
     public function removeListener($eventName, $listener, $delay)
     {
@@ -260,7 +260,7 @@ class DelayedEventDispatcher
 
     /**
      * @param string $eventName The event(s) to remove a listener from
-     * @param int          $delay The event delay, in seconds
+     * @param int|string|\DateInterval          $delay The event delay, in seconds
      */
     protected function removeListenerTrigger($eventName, $delay)
     {

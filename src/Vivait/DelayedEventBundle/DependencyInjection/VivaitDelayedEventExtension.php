@@ -11,7 +11,7 @@ class VivaitDelayedEventExtension extends ConfigurableExtension
 {
     public function getConfiguration(array $config, ContainerBuilder $container)
     {
-        return new Configuration();
+        return new Configuration($container);
     }
 
     public function loadInternal(array $config, ContainerBuilder $container)

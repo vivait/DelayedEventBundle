@@ -23,7 +23,8 @@
         "behat/behat": "~2.5",
         "matthiasnoback/symfony-config-test": "~1.0",
         "doctrine/doctrine-bundle": "~1.2",
-        "doctrine/orm": "~2.2"
+        "doctrine/orm": "~2.2",
+        "indigophp/doctrine-annotation-autoload": "0.1.*@dev"
     },
     "config": {
         "bin-dir": "bin"
