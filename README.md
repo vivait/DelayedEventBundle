@@ -27,81 +27,21 @@ services:
 By default, any integer will be treated as seconds. The bundle will use [PHP's textual datetime parsing](http://php.net/manual/en/function.strtotime.php)
 to parse a textual datetime string in to seconds like in the example above.
 
-# Transformers
+# Normalizers
 If you're delaying an event, rather than store the exact state of an entity at the time of the event, you'll probably
-want to receive the latest version of the entity. The bundle allows the usage of transformers, which are ran before
-each property of an event is serialized. By default, the bundle has an entity transformer enabled, which will detect
+want to receive the latest version of the entity. The bundle allows the usage of normalizers, which are ran before
+each property of an event is serialized. By default, the bundle has an entity normalizer enabled, which will detect
 any entities in an event and store a reference to an entity. This means that when the entity is unserialized for the
 delayed event, a fresh entity is loaded from the database.
 
-You can enable/disable transformers on a global level:
+You can create custom normalizers by implementing the `NormalizerInterface` and `DenormalizerInterface` interfaces:
 
-```yaml
-# app/config.yml
-vivait_delayed_event:
-    storage: delayed_event_cache
-    transformers:
-        doctrine: disabled
-```
-
-
-You can also enable/disable them when tagging an event listener:
+You must then tag the custom normalizer:
 ```yaml
 # app/config/services.yml
 services:
-    app.your_listener_name:
-        class: AppBundle\EventListener\AcmeListener
+    app.your_normalizer_name:
+        class: AppBundle\EventTransformer\AcmeNormalizer
         tags:
-            - {
-                name: delayed_event.event_listener, delay: '24 hours', event: app.my_event, method: onMyEvent,
-                transformers: [doctrine]
-            }
-```
-
-*Note:* The `enabled` part is optional, and in the example above has been left out for brevity.
-
-You can create custom transformers by implementing the `TransformerInterface` interface, like so:
-
-```php
-class AcmeTransformer implements TransformerInterface
-{
-    public function supports(\ReflectionProperty $property) {
-        $property->getValue();
-        return is_object($data) && $this->doctrine->contains($data);
-    }
-
-    public function serialize($data)
-    {
-        // Get the ID
-        $id = $this->doctrine->getMetaData($data)->getIdentifierFieldNames();
-
-        $class = get_class($data);
-
-        /* @var UnitOfWork $uow */
-        $uow = $this->doctrine->getUnitOfWork();
-        $id = $uow->getDocumentIdentifier($data);
-
-        return [
-            $class,
-            $id
-        ];
-    }
-
-    public function deserialize($data)
-    {
-        list($class, $id) = $data;
-        return $this->doctrine->getRepository($class)->find($id);
-    }
-}
-
-```
-
-You must then tag the custom transformer:
-```yaml
-# app/config/services.yml
-services:
-    app.your_transformer_name:
-        class: AppBundle\EventTransformer\AcmeTransformer
-        tags:
-            - { name: your_transformer_name }
+            - { name: delayed_event.normalizer }
 ```
