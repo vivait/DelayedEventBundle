@@ -6,12 +6,15 @@ use Symfony\Component\DependencyInjection\Compiler\PassConfig;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\EventDispatcher\DependencyInjection\RegisterListenersPass;
 use Symfony\Component\HttpKernel\Bundle\Bundle;
+use Vivait\DelayedEventBundle\DependencyInjection\RegisterNormalizersPass;
 
 class VivaitDelayedEventBundle extends Bundle
 {
     public function build(ContainerBuilder $container)
     {
         parent::build($container);
+
+        $container->addCompilerPass(new RegisterNormalizersPass);
 
         $container->addCompilerPass(
             new RegisterListenersPass(

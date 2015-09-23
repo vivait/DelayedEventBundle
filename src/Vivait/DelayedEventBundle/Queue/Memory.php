@@ -3,6 +3,7 @@
 namespace Vivait\DelayedEventBundle\Queue;
 
 use Vivait\DelayedEventBundle\IntervalCalculator;
+use Vivait\DelayedEventBundle\Serializer\SerializerInterface;
 
 /**
  * @internal Used only for testing
@@ -14,13 +15,14 @@ class Memory implements QueueInterface
     public function put($eventName, $event, \DateInterval $delay = null)
     {
         $seconds = IntervalCalculator::convertDateIntervalToSeconds($delay);
-        $this->jobs[$seconds][] = new Job($event, $eventName);
+
+        $this->jobs[$seconds][] = new Job($eventName, $event);
     }
 
     public function get()
     {
         $currentTime = key($this->jobs);
-        return array_shift($this->jobs[$currentTime]);
+        return $currentTime ? array_shift($this->jobs[$currentTime]) : null;
     }
 
     public function delete($job)

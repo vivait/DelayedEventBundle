@@ -41,6 +41,11 @@ class Serializer implements SerializerInterface
                 }
             }
 
+            // No transformers? Don't serialize
+            if (!$transformers) {
+                continue;
+            }
+
             $data[$attribute] = [
                 $value,
                 $transformers

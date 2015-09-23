@@ -9,7 +9,6 @@ use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Vivait\DelayedEventBundle\IntervalCalculator;
 use Vivait\DelayedEventBundle\Queue\QueueInterface;
-use Vivait\DelayedEventBundle\Serializer\SerializerInterface;
 
 class DelayedEventDispatcher
 {
@@ -18,11 +17,6 @@ class DelayedEventDispatcher
      * @var EventDispatcher
      */
     private $dispatcher;
-
-    /**
-     * @var SerializerInterface
-     */
-    private $serializer;
 
     /**
      * @var QueueInterface
@@ -40,13 +34,11 @@ class DelayedEventDispatcher
      * If an EventDispatcherInterface is not provided , a new EventDispatcher
      * will be composed.
      *
-     * @param SerializerInterface $serializer
      * @param QueueInterface $queue
      * @param ContainerAwareEventDispatcher|EventDispatcherInterface $dispatcher
      */
-    public function __construct(SerializerInterface $serializer, QueueInterface $queue, EventDispatcherInterface $dispatcher = null)
+    public function __construct(QueueInterface $queue, EventDispatcherInterface $dispatcher = null)
     {
-        $this->serializer = $serializer;
         $this->queue = $queue;
         $this->dispatcher = $dispatcher ?: new EventDispatcher();
     }
@@ -114,10 +106,8 @@ class DelayedEventDispatcher
         }
 
         $this->listenerTriggers[$delayedEventName] = function (Event $event) use ($delay, $delayedEventName) {
-            // Serialize the event object
-            $data = $this->serializer->serialize($event);
             // Add it to the queue
-            $this->queue->put($delayedEventName, $data, $delay);
+            $this->queue->put($delayedEventName, $event, $delay);
         };
 
         // Add a listener for the actual event

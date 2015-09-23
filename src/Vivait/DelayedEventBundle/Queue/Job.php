@@ -20,6 +20,6 @@ class Job implements JobInterface
 
     public function getEvent()
     {
-        return $this->eventName;
+        return $this->event;
     }
 }

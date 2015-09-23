@@ -1,0 +1,29 @@
+framework:
+    secret: "IDontLikeIceCream"
+
+vivait_delayed_event:
+  queue_transport: memory
+
+#leezy_pheanstalk:
+#    enabled: true
+#    pheanstalks:
+#        primary:
+#            server: 127.0.0.1
+#            default: true
+
+doctrine:
+    dbal:
+        default_connection: default
+        connections:
+            default:
+                driver:   pdo_sqlite
+                path:     %kernel.cache_dir%/test.db
+    orm:
+        mappings:
+            DelayedEventBundle:
+              mapping: true
+              type: annotation
+              dir: '%kernel.root_dir%/../Models'
+              alias: 'DelayedEventBundle'
+              prefix: 'Tests\Vivait\DelayedEventBundle\Models'
+              is_bundle: false

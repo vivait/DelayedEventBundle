@@ -19,7 +19,7 @@ class VivaitDelayedEventExtension extends ConfigurableExtension
         $loader = new Loader\YamlFileLoader($container, new FileLocator(__DIR__ . '/../Resources/config'));
         $loader->load('services.yml');
         //$loader->load('storage.yml');
-        $loader->load('transformers.yml');
+        $loader->load('normalizers.yml');
 
         if (in_array($config['queue_transport'], ['beanstalkd', 'memory'])) {
             $loader->load(sprintf('queue/%s.yml', $config['queue_transport']));

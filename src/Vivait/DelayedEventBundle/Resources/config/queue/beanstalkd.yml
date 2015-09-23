@@ -4,4 +4,7 @@ services:
 
   vivait_delayed_event.queue.beanstalk:
     class: Vivait\DelayedEventBundle\Queue\Beanstalk
-    arguments: ['@leezy.pheanstalk']
+    arguments:
+      - @leezy.pheanstalk
+      - @vivait_delayed_event.serializer
+

@@ -9,6 +9,9 @@ use Vivait\DelayedEventBundle\DependencyInjection\RegisterListenersPass;
 use Vivait\DelayedEventBundle\DependencyInjection\VivaitDelayedEventExtension;
 use Vivait\DelayedEventBundle\EventDispatcher\DelayedEventDispatcher;
 
+/**
+ * Checks that the listener pass will take the tags from the container builder and register the listeners/subscribers
+ */
 class ListenerPassTest extends \PHPUnit_Framework_TestCase
 {
     /**

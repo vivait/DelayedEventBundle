@@ -14,6 +14,9 @@ interface QueueInterface {
 
     public function put($eventName, $data, \DateInterval $delay = null);
 
+    /**
+     * @return Job|null
+     */
     public function get();
 
     public function delete($job);
