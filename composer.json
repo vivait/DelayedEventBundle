@@ -17,12 +17,15 @@
         "leezy/pheanstalk-bundle": "~2.0"
     },
     "require-dev": {
-        "phpspec/phpspec": "dev-master",
+        "phpspec/phpspec": "~2.0",
         "phpunit/phpunit": "3.7.*",
         "behat/behat": "~2.5",
         "matthiasnoback/symfony-config-test": "~1.0",
         "doctrine/doctrine-bundle": "~1.2",
         "doctrine/orm": "~2.2"
+    },
+    "config": {
+        "bin-dir": "bin"
     },
     "autoload": {
         "psr-0": {
