@@ -31,6 +31,8 @@ class EndToEndTest extends \PHPUnit_Framework_TestCase
 
     function __construct($consolePath = null)
     {
+        parent::__construct();
+
         $this->consolePath = $consolePath ?: __DIR__ .'/app/console.php';
     }
 
