@@ -14,17 +14,19 @@
         "php": ">=5.4",
         "symfony/framework-bundle": "~2.3",
         "psr/log": "~1.0",
-        "wrep/daemonizable-command": "dev-master",
-        "doctrine/doctrine-cache-bundle": "~1.0@dev",
-        "jms/job-queue-bundle": "0.1.*@dev"
+        "leezy/pheanstalk-bundle": "~2.0",
+        "wrep/daemonizable-command": "dev-master"
     },
     "require-dev": {
-        "phpspec/phpspec": "dev-master",
+        "phpspec/phpspec": "~2.0",
         "phpunit/phpunit": "3.7.*",
         "behat/behat": "~2.5",
         "matthiasnoback/symfony-config-test": "~1.0",
         "doctrine/doctrine-bundle": "~1.2",
         "doctrine/orm": "~2.2"
+    },
+    "config": {
+        "bin-dir": "bin"
     },
     "autoload": {
         "psr-0": {

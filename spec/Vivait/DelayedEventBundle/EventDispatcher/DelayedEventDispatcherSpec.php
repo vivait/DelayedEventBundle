@@ -25,9 +25,9 @@ class DelayedEventDispatcherSpec extends ObjectBehavior
      */
     private $dispatcher;
 
-    function let(SerializerInterface $serializer, QueueInterface $queue) {
+    function let(QueueInterface $queue) {
         $this->dispatcher = new EventDispatcher();
-        $this->beConstructedWith($serializer, $queue, $this->dispatcher);
+        $this->beConstructedWith($queue, $this->dispatcher);
     }
 
     function it_should_add_to_the_queue_when_an_event_is_triggered(QueueInterface $queue) {
@@ -61,9 +61,9 @@ class DelayedEventDispatcherSpec extends ObjectBehavior
         $this->dispatcher->dispatch($eventName, new Event);
     }
 
-    function it_should_only_register_only_one_listener_trigger(SerializerInterface $serializer, QueueInterface $queue, EventDispatcher $dispatcher) {
+    function it_should_only_register_only_one_listener_trigger(QueueInterface $queue, EventDispatcher $dispatcher) {
         // Convert the dispatcher in to a spy
-        $this->beConstructedWith($serializer, $queue, $dispatcher);
+        $this->beConstructedWith($queue, $dispatcher);
 
         $delay = IntervalCalculator::convertDelayToInterval(10);
         $eventName = 'test.event1';
@@ -82,22 +82,22 @@ class DelayedEventDispatcherSpec extends ObjectBehavior
             ->shouldHaveBeenCalledTimes(2);
     }
 
-    function it_should_serialize_an_event(QueueInterface $queue, SerializerInterface $serializer) {
-        $delay = IntervalCalculator::convertDelayToInterval(5);
-        $eventName = 'test.event2';
-        $event = new ComplexEvent;
-        $delayedEventName = $this->generateDelayedEventName($eventName, $delay);
-
-        $serializer->serialize($event)
-                   ->willReturn(serialize('fake serialization'))
-                   ->shouldBeCalled();
-
-        $queue->put($delayedEventName, Argument::type('string'), $delay)
-            ->shouldBeCalled();
-
-        $this->addListener($eventName, 'echo', $delay);
-        $this->dispatcher->dispatch($eventName, $event);
-    }
+//    function it_should_serialize_an_event(QueueInterface $queue) {
+//        $delay = IntervalCalculator::convertDelayToInterval(5);
+//        $eventName = 'test.event2';
+//        $event = new ComplexEvent;
+//        $delayedEventName = $this->generateDelayedEventName($eventName, $delay);
+//
+//        $serializer->serialize($event)
+//                   ->willReturn(serialize('fake serialization'))
+//                   ->shouldBeCalled();
+//
+//        $queue->put($delayedEventName, Argument::type('string'), $delay)
+//            ->shouldBeCalled();
+//
+//        $this->addListener($eventName, 'echo', $delay);
+//        $this->dispatcher->dispatch($eventName, $event);
+//    }
 
     function it_should_remove_the_trigger_listener_when_removing_last_listener() {
         $eventName = 'test.event3';

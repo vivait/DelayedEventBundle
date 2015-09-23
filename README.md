@@ -12,26 +12,6 @@ vivait_delayed_event:
 This relies on [pheanstalk](https://github.com/armetiz/LeezyPheanstalkBundle/blob/master/Resources/doc/1-installation.md) 
 being installed and setup in your config.
 
-## Storing the event details
-This bundle utilises the [Doctrine Cache Bundle](https://github.com/doctrine/DoctrineCacheBundle) as a storage facility
-for the serialized event. This means you'll need to setup a provider for delayed event bundle to use as its `storage`
-parameter, like below:
-
-```yaml
-doctrine_cache:
-    providers:
-        delayed_event_cache:
-            sqlite3:
-                file_name: '%kernel.cache_dir%/delayed_event_cache.db'
-
-vivait_delayed_event:
-    storage: delayed_event_cache
-```
-
-Make sure the life of the cache is atleast as long as the life of your queue and accessible by any workers - i.e. if 
-your worker is on a different system than the cache provider, make sure it is accessible. Likewise make sure it's going
-to atleast live as long as your queue.
-
 # Creating a delayed event
 Instead of tagging the event with a kernel tag, tag the event with a `delayed_event` tag and provide a delay:
 

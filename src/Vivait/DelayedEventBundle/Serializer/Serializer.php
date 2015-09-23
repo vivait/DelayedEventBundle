@@ -1,12 +1,13 @@
 <?php
 namespace Vivait\DelayedEventBundle\Serializer;
 
+use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
 use Vivait\DelayedEventBundle\Transformer\TransformerInterface;
 
 class Serializer implements SerializerInterface
 {
     /**
-     * @var TransformerInterface[]
+     * @var NormalizerInterface[]
      */
     private $transformers;
 
