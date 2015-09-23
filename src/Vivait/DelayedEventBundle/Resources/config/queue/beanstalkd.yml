@@ -3,7 +3,7 @@ services:
     alias: vivait_delayed_event.queue.beanstalk
 
   vivait_delayed_event.queue.beanstalk:
-    class: Vivait\DelayedEventBundle\Queue\Beanstalk
+    class: Vivait\DelayedEventBundle\Queue\Beanstalkd
     arguments:
       - @leezy.pheanstalk
       - @vivait_delayed_event.serializer
