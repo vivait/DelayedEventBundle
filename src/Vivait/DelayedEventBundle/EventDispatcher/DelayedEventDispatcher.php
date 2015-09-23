@@ -52,7 +52,7 @@ class DelayedEventDispatcher
      * @param int $priority The higher this value, the earlier an event
      *                            listener will be triggered in the chain (defaults to 0)
      */
-    public function addListener($eventName, $listener, $delay, $priority = 0)
+    public function addListener($eventName, $listener, $delay = 0, $priority = 0)
     {
         $delay = IntervalCalculator::convertDelayToInterval($delay);
         $delayedEventName = $this->generateDelayedEventName($eventName, $delay);
@@ -74,7 +74,7 @@ class DelayedEventDispatcher
      * @param int $priority The higher this value, the earlier an event
      *                            listener will be triggered in the chain (defaults to 0)
      */
-    public function addListenerService($eventName, $callback, $delay, $priority = 0)
+    public function addListenerService($eventName, $callback, $delay = 0, $priority = 0)
     {
         if (!($this->dispatcher instanceOf ContainerAwareEventDispatcher)) {
             throw new \BadMethodCallException('Tried to add a service as a listener to a container unaware dispatcher');
@@ -95,7 +95,7 @@ class DelayedEventDispatcher
      * @param string $eventName
      * @param string|int|\DateInterval $delay The event delay, in seconds
      */
-    private function addListenerTrigger($eventName, $delay)
+    private function addListenerTrigger($eventName, $delay = 0)
     {
         $delay = IntervalCalculator::convertDelayToInterval($delay);
         $delayedEventName = $this->generateDelayedEventName($eventName, $delay);
@@ -170,7 +170,7 @@ class DelayedEventDispatcher
      * @param callable     $listener  The listener to remove
      * @param int|string|\DateInterval          $delay The event delay, in seconds
      */
-    public function removeListener($eventName, $listener, $delay)
+    public function removeListener($eventName, $listener, $delay = 0)
     {
         $delay = IntervalCalculator::convertDelayToInterval($delay);
 
@@ -206,10 +206,10 @@ class DelayedEventDispatcher
             if (is_string($params)) {
                 throw new \InvalidArgumentException(sprintf('Subscribed events provides string "%s" when array of at least ["%s", $delay] is required', $params));
             } elseif (is_string($params[0])) {
-                $this->removeListener($eventName, array($subscriber, $params[0]), $params[1], isset($params[2]) ? $params[2] : 0);
+                $this->removeListener($eventName, array($subscriber, $params[0]), $params[1]);
             } else {
                 foreach ($params as $listener) {
-                    $this->removeListener($eventName, array($subscriber, $listener[0]), $listener[1], isset($listener[2]) ? $listener[2] : 0);
+                    $this->removeListener($eventName, array($subscriber, $listener[0]), $listener[1]);
                 }
             }
         }
@@ -262,7 +262,7 @@ class DelayedEventDispatcher
      * @param string $eventName The event(s) to remove a listener from
      * @param int|string|\DateInterval          $delay The event delay, in seconds
      */
-    protected function removeListenerTrigger($eventName, $delay)
+    protected function removeListenerTrigger($eventName, $delay = 0)
     {
         $delay = IntervalCalculator::convertDelayToInterval($delay);
         $delayedEventName = $this->generateDelayedEventName($eventName, $delay);

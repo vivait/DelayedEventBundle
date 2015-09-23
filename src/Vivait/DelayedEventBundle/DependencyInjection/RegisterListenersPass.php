@@ -59,10 +59,7 @@ class RegisterListenersPass implements CompilerPassInterface
 
             foreach ($events as $event) {
                 $priority = isset($event['priority']) ? $event['priority'] : 0;
-
-                if (!isset($event['delay'])) {
-                    throw new \InvalidArgumentException(sprintf('Service "%s" must define the "delay" attribute on "%s" tags.', $id, $this->listenerTag));
-                }
+                $delay = isset($event['delay']) ? $event['delay'] : 0;
 
                 if (!isset($event['event'])) {
                     throw new \InvalidArgumentException(sprintf('Service "%s" must define the "event" attribute on "%s" tags.', $id, $this->listenerTag));
@@ -76,7 +73,7 @@ class RegisterListenersPass implements CompilerPassInterface
                     $event['method'] = preg_replace('/[^a-z0-9]/i', '', $event['method']);
                 }
 
-                $definition->addMethodCall('addListenerService', array($event['event'], array($id, $event['method']), $event['delay'], $priority));
+                $definition->addMethodCall('addListenerService', array($event['event'], array($id, $event['method']), $delay, $priority));
             }
         }
 
