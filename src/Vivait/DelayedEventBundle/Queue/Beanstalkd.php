@@ -3,7 +3,6 @@
 namespace Vivait\DelayedEventBundle\Queue;
 
 use Vivait\DelayedEventBundle\IntervalCalculator;
-use Vivait\DelayedEventBundle\Queue\Beanstalkd\Job;
 use Vivait\DelayedEventBundle\Serializer\SerializerInterface;
 
 class Beanstalkd implements QueueInterface
@@ -29,24 +28,30 @@ class Beanstalkd implements QueueInterface
         $this->beanstalk = $beanstalk;
         $this->tube = $tube;
         $this->serializer = $serializer;
+        $this->beanstalk->useTube($this->tube);
     }
 
     public function put($eventName, $event, \DateInterval $delay = null)
     {
-        $job = new Job($eventName, $this->serializer->serialize($event));
+        $job = $this->serializer->serialize($event);
 
         $seconds = IntervalCalculator::convertDateIntervalToSeconds($delay);
 
-        $this->beanstalk->useTube($this->tube);
-        $this->beanstalk->put($job->toPheanstalk(), self::PRIORITY, $seconds, self::TTL);
+        $this->beanstalk->put(json_encode(
+            [
+                'eventName' => $eventName,
+                'event' => $job
+            ]
+        ), self::PRIORITY, $seconds, self::TTL);
     }
 
     public function get()
     {
         $this->beanstalk->watch($this->tube);
         $job = $this->beanstalk->reserve();
+        $data = json_decode($this->serializer->deserialize($job), true);
 
-        return Job::fromPheanstalk($job);
+        return new Job($data['eventName'], $data['job']);
     }
 
     public function delete($job)

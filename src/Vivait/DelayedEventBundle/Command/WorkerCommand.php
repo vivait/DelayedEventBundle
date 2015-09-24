@@ -70,14 +70,12 @@ class WorkerCommand extends EndlessCommand
 		    return;
 	    }
 
-	    $event = $job->getEvent();
-
         //try {
             $output->writeln(
                 sprintf("[%s] <info>Performing jobs</info>", $this->getName())
             );
 
-            $this->eventDispatcher->dispatch($job->getEventName(), $event);
+            $this->eventDispatcher->dispatch($job->getEventName(), $job->getEvent());
 
             // Delete it from the queue
             $this->queue->delete($job);

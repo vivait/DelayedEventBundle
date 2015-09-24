@@ -20,8 +20,9 @@ class SimpleEntity {
      */
     public $name;
 
-    function __construct($name)
+    function __construct($name, $id = null)
     {
         $this->name = $name;
+        $this->id = $id;
     }
 }

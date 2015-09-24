@@ -9,7 +9,6 @@ use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
 use Symfony\Component\Serializer\Normalizer\PropertyNormalizer;
 use Symfony\Component\Serializer\Serializer;
 use Symfony\Component\Serializer\Tests\Normalizer\PropertyNormalizerTest;
-use Vivait\DelayedEventBundle\Transformer\DoctrineORMNormalizer;
 use Vivait\DelayedEventBundle\Transformer\TransformerInterface;
 
 class SymfonySerializer implements SerializerInterface
@@ -32,6 +31,6 @@ class SymfonySerializer implements SerializerInterface
 
     public function deserialize($serializedData)
     {
-        return $this->serializer->deserialize($serializedData, 'Event', 'json');
+        return $this->serializer->deserialize($serializedData, 'Symfony\Component\EventDispatcher\Event', 'json');
     }
 }

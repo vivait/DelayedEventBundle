@@ -1,13 +1,12 @@
 <?php
 namespace Vivait\DelayedEventBundle\Serializer;
 
-use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
 use Vivait\DelayedEventBundle\Transformer\TransformerInterface;
 
 class Serializer implements SerializerInterface
 {
     /**
-     * @var NormalizerInterface[]
+     * @var TransformerInterface[]
      */
     private $transformers;
 
@@ -36,6 +35,7 @@ class Serializer implements SerializerInterface
 
             // Apply any transformations
             foreach ($this->transformers as $transformerName => $transformer){
+
                 if ($transformer->supports($property, $value)) {
                     $value = $transformer->transform($value);
                     $transformers[] = $transformerName;
@@ -75,6 +75,11 @@ class Serializer implements SerializerInterface
         foreach ($props as $property) {
             $property->setAccessible(true);
             $attribute = $property->getName();
+
+            // Not a serialized property
+            if (!isset($data[$attribute])) {
+                continue;
+            }
 
             // Find out the transformers
             list($value, $transformers) = $data[$attribute];

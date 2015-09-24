@@ -5,27 +5,43 @@ services:
 #  vivait_delayed_event.normalizer.doctrineorm:
 #    class: Vivait\DelayedEventBundle\Transformer\DoctrineORM
 #
-  vivait_delayed_event.normalizer.doctrineorm:
-    class: Vivait\DelayedEventBundle\Normalizer\DoctrineORMNormalizer
-    arguments:
-      - @doctrine
-    tags:
-      - name: delayed_event.normalizer
+
+#  vivait_delayed_event.normalizer.getsetmethod:
+#    class: Vivait\DelayedEventBundle\Normalizer\EventNormalizer
+#    tags:
+#      - name: delayed_event.normalizer
+#
 
   # Symfony normalizers
 #  vivait_delayed_event.normalizer.property:
 #    class: Symfony\Component\Serializer\Normalizer\PropertyNormalizer
 #    tags:
 #      - name: delayed_event.normalizer
-
+#
 #  vivait_delayed_event.normalizer.event:
 #    class: Vivait\DelayedEventBundle\Normalizer\EventNormalizer
 #    tags:
 #      - name: delayed_event.normalizer
 
-  vivait_delayed_event.normalizer.getsetmethod:
-    class: Symfony\Component\Serializer\Normalizer\GetSetMethodNormalizer
+  vivait_delayed_event.normalizer.doctrineorm:
+    class: Vivait\DelayedEventBundle\Transformer\DoctrineORM
+    arguments:
+      - @doctrine
     tags:
       - name: delayed_event.normalizer
-    calls:
-      - [setIgnoredAttributes, [["dispatcher"]]]
+
+#  vivait_delayed_event.normalizer.getsetmethod:
+#    class: Symfony\Component\Serializer\Normalizer\GetSetMethodNormalizer
+#    tags:
+#      - name: delayed_event.normalizer
+#    calls:
+#      - [setIgnoredAttributes, [["dispatcher"]]]
+
+
+#  vivait_delayed_event.normalizer.propertynormalizer:
+#    class: Symfony\Component\Serializer\Normalizer\PropertyNormalizer
+#    tags:
+#      - name: delayed_event.normalizer
+#    calls:
+#      - [setIgnoredAttributes, [["dispatcher"]]]
+

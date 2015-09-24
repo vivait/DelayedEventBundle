@@ -8,6 +8,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\EventDispatcher\Event;
 use Tests\Vivait\DelayedEventBundle\app\AppKernel;
 use Tests\Vivait\DelayedEventBundle\Models\SimpleEntity;
+use Vivait\DelayedEventBundle\Queue\Job;
 use Vivait\DelayedEventBundle\Serializer\SerializerInterface;
 
 /**
@@ -57,49 +58,47 @@ class SerializerTest extends \PHPUnit_Framework_TestCase
         return $this->container->get('vivait_delayed_event.serializer');
     }
 
-//    public function testBasicEvent()
-//    {
-//        $serialized = $this->getSerializer()->serialize(new Event());
-//        var_dump($serialized);
-//    }
-
-    public function testEventWithEntity()
+    public function testBasicEvent()
     {
-        /** @var EntityManagerInterface $em */
-        $em = $this->container->get('doctrine')->getManager();
-        $entity = new SimpleEntity('Test');
+        $serialized = $this->getSerializer()->serialize(new SimpleEvent('Test'));
 
-        $em->persist($entity);
-
-        $this->getSerializer()->serialize(new EntityEvent($entity));
+        var_dump($serialized);
     }
+
+//    public function testEventWithEntity()
+//    {
+//        /** @var EntityManagerInterface $em */
+//        $em = $this->container->get('doctrine')->getManager();
+//        $entity = new SimpleEntity('Test', 1);
+//
+//        $em->persist($entity);
+//
+//        $serialized = $this->getSerializer()->serialize(new SimpleEvent($entity));
+//        \PHPUnit_Framework_Assert::assertInternalType('string', $serialized);
+//
+//        var_dump($serialized);
+//        $deserialized = $this->getSerializer()->deserialize($serialized);
+//
+//        var_dump($deserialized);
+//    }
 }
 
-class EntityEvent extends Event {
-    private $entity;
+class SimpleEvent extends Event {
+    private $test;
 
-    function __construct($entity)
+    function __construct($test)
     {
-        $this->entity = $entity;
+        $this->test = $test;
     }
 
-    /**
-     * Gets entity
-     * @return SimpleEntity
-     */
-    public function getEntity()
+    public function getTest()
     {
-        return $this->entity;
+        return $this->test;
     }
 
-    /**
-     * Sets entity
-     * @param SimpleEntity $entity
-     * @return $this
-     */
-    public function setEntity($entity)
+    public function setTest($test)
     {
-        $this->entity = $entity;
+        $this->test = $test;
 
         return $this;
     }

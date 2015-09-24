@@ -7,9 +7,6 @@
 namespace Vivait\DelayedEventBundle\Queue;
 
 
-use Vivait\DelayedEventBundle\Queue\Beanstalkd;
-use Vivait\DelayedEventBundle\Queue\Beanstalkd\Job;
-
 interface QueueInterface {
 
     public function put($eventName, $data, \DateInterval $delay = null);
