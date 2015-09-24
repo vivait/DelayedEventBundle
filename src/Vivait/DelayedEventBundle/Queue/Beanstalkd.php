@@ -49,7 +49,7 @@ class Beanstalkd implements QueueInterface
     {
         $this->beanstalk->watch($this->tube);
         $job = $this->beanstalk->reserve();
-        $data = json_decode($this->serializer->deserialize($job), true);
+        $data = json_decode($this->serializer->deserialize($job->getData()), true);
 
         return new Job($data['eventName'], $data['job']);
     }
