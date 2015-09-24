@@ -18,20 +18,19 @@ class VivaitDelayedEventExtension extends ConfigurableExtension
     {
         $loader = new Loader\YamlFileLoader($container, new FileLocator(__DIR__ . '/../Resources/config'));
         $loader->load('services.yml');
-        //$loader->load('storage.yml');
         $loader->load('normalizers.yml');
 
-        if (in_array($config['queue_transport'], ['beanstalkd', 'memory'])) {
-            $loader->load(sprintf('queue/%s.yml', $config['queue_transport']));
-        }
+        $loader->load(sprintf('queue/%s.yml', $config['queue_transport']['name']));
 
-//        if (!empty($config['queue_transport'])) {
-//            $container->setAlias('vivait_delayed_event.queue', 'vivait_delayed_event.queue.'. $config['queue_transport']);
-//        }
-//
-//        if (!empty($config['storage'])) {
-//            $container->setAlias('vivait_delayed_event.storage', 'vivait_delayed_event.storage.'. $config['storage']);
-//        }
+        if (!empty($config['queue_transport']['configuration'])) {
+            $container->setParameter(
+                'vivait_delayed_event.queue.configuration',
+                array_merge(
+                    $container->getParameter('vivait_delayed_event.queue.configuration'),
+                    $config['queue_transport']['configuration']
+                )
+            );
+        }
     }
 
 }

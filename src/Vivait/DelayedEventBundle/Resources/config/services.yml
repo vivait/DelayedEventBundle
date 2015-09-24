@@ -3,6 +3,7 @@ parameters:
  vivait_delayed_event.registry.class: Vivait\DelayedEventBundle\Registry\DelayedEventsRegistry
  vivait_delayed_event.serializer.class: Vivait\DelayedEventBundle\Serializer\Serializer
  vivait_delayed_event.delayer.class: Vivait\DelayedEventBundle\Event\EventListenerDelayer
+ vivait_delayed_event.queue.configuration: []
 
 services:
 

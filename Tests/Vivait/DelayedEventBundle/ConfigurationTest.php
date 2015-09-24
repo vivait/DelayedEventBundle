@@ -35,7 +35,7 @@ class ConfigurationTest extends AbstractConfigurationTestCase
         );
     }
 
-    public function testValidDrivers()
+    public function testQueueTransportShort()
     {
         $this->assertConfigurationIsValid(
             [
@@ -47,41 +47,32 @@ class ConfigurationTest extends AbstractConfigurationTestCase
         );
     }
 
-    public function testInvalidDrivers()
+    public function testQueueTransportLong()
     {
-//        $this->assertConfigurationIsInvalid(
-//            [
-//                [
-//                    'queue_transport' => 'wrong_queue',
-//                    //'storage' => 'test_storage'
-//                ]
-//            ],
-//            'Invalid queue transport'
-//        );
-
-//        $this->assertConfigurationIsInvalid(
-//            [
-//                [
-//                    'queue_transport' => 'test_queue',
-//                    'storage' => 'wrong_storage'
-//                ]
-//            ],
-//            'Invalid storage'
-//        );
-
+        $this->assertConfigurationIsValid(
+            [
+                [
+                    'queue_transport' => [
+                        'name' => 'test_queue'
+                    ],
+                ]
+            ]
+        );
     }
 
-//    public function testArrayStorageDriverIsBlocked()
-//    {
-//        // Don't accept the array storage option, since it's per-request
-//        $this->assertConfigurationIsInvalid(
-//            [
-//                [
-//                    'queue_transport' => 'test_queue',
-//                    'storage' => 'array'
-//                ]
-//            ],
-//            'Invalid storage'
-//        );
-//    }
+    public function testQueueTransportConfiguration()
+    {
+        $this->assertConfigurationIsValid(
+            [
+                [
+                    'queue_transport' => [
+                        'name' => 'test_queue',
+                        'configuration' => [
+                            'tube' => 'test'
+                        ]
+                    ],
+                ]
+            ]
+        );
+    }
 }
