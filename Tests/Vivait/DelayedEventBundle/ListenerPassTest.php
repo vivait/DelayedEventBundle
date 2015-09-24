@@ -5,9 +5,11 @@ namespace Tests\Vivait\DelayedEventBundle;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
 use Symfony\Component\DependencyInjection\Reference;
+use Symfony\Component\EventDispatcher\EventDispatcher;
 use Vivait\DelayedEventBundle\DependencyInjection\RegisterListenersPass;
 use Vivait\DelayedEventBundle\DependencyInjection\VivaitDelayedEventExtension;
 use Vivait\DelayedEventBundle\EventDispatcher\DelayedEventDispatcher;
+use Vivait\DelayedEventBundle\Registry\DelayedEventsRegistry;
 
 /**
  * Checks that the listener pass will take the tags from the container builder and register the listeners/subscribers
@@ -25,11 +27,19 @@ class ListenerPassTest extends \PHPUnit_Framework_TestCase
     private $listenerPass;
 
     /**
-     * @return DelayedEventDispatcher
+     * @return EventDispatcher
      */
     private function getDispatcher()
     {
-        return $this->container->get('delayed_event_dispatcher');
+        return $this->container->get('event_dispatcher');
+    }
+
+    /**
+     * @return DelayedEventsRegistry
+     */
+    private function getDelayRegistry()
+    {
+        return $this->container->get('vivait_delayed_event.registry');
     }
 
     function setUp() {
@@ -50,7 +60,7 @@ class ListenerPassTest extends \PHPUnit_Framework_TestCase
         ));
     }
 
-    public function testListener()
+    public function testTriggerListener()
     {
         $this->container->register('test_listener', 'stdClass')
                         ->addTag('delayed_event.event_listener', [
@@ -62,10 +72,10 @@ class ListenerPassTest extends \PHPUnit_Framework_TestCase
         $this->listenerPass->process($this->container);
 
         $dispatcher = $this->getDispatcher();
-        \PHPUnit_Framework_Assert::assertTrue($dispatcher->hasListeners('test.event', 10));
+        \PHPUnit_Framework_Assert::assertTrue($dispatcher->hasListeners('test.event'));
     }
 
-    public function testDateParsing()
+    public function testDuplicateDates()
     {
         $this->container->register('test_listener', 'stdClass')
                         ->addTag('delayed_event.event_listener', [
@@ -74,20 +84,24 @@ class ListenerPassTest extends \PHPUnit_Framework_TestCase
                             'delay' => '1 day'
                         ]);
 
+        $this->container->register('duplicate_test_listener', 'stdClass')
+                        ->addTag('delayed_event.event_listener', [
+                            'event' => 'test.event',
+                            'method' => 'onMyEvent',
+                            'delay' => '24 hours'
+                        ]);
+
+        $this->container->register('unique_test_listener', 'stdClass')
+                        ->addTag('delayed_event.event_listener', [
+                            'event' => 'test.event',
+                            'method' => 'onMyEvent',
+                            'delay' => '23 hours'
+                        ]);
+
         $this->listenerPass->process($this->container);
-        $dispatcher = $this->getDispatcher();
 
-        // Test the various
-        \PHPUnit_Framework_Assert::assertTrue($dispatcher->hasListeners('test.event', '1 day'));
-        \PHPUnit_Framework_Assert::assertTrue($dispatcher->hasListeners('test.event', '24 hours'));
-        \PHPUnit_Framework_Assert::assertTrue($dispatcher->hasListeners('test.event', '1440 minutes'));
-        \PHPUnit_Framework_Assert::assertTrue($dispatcher->hasListeners('test.event', '86400 seconds'));
-        \PHPUnit_Framework_Assert::assertTrue($dispatcher->hasListeners('test.event', 86400));
-        \PHPUnit_Framework_Assert::assertTrue($dispatcher->hasListeners('test.event', new \DateInterval('P1D')));
-        \PHPUnit_Framework_Assert::assertTrue($dispatcher->hasListeners('test.event', new \DateInterval('PT24H')));
-
-        // Just to confirm it wasn't all a fluke
-        \PHPUnit_Framework_Assert::assertFalse($dispatcher->hasListeners('test.event', 76400));
+        $registry = $this->getDelayRegistry();
+        \PHPUnit_Framework_Assert::assertCount(2, $registry->getDelays('test.event'));
     }
 
     public function testListenerWithoutMethod()
@@ -98,11 +112,12 @@ class ListenerPassTest extends \PHPUnit_Framework_TestCase
                             'delay' => '10'
                         ]);
 
-
         $this->listenerPass->process($this->container);
 
+        $delayedEventName = $this->getDelayedEventName('test.event');
+
         $dispatcher = $this->getDispatcher();
-        $listener = $dispatcher->getListeners('test.event', 10);
+        $listener = $dispatcher->getListeners($delayedEventName);
 
         // Check it auto-generated the listener method
         \PHPUnit_Framework_Assert::assertSame('onTestEvent', $listener[0][1]);
@@ -127,8 +142,10 @@ class ListenerPassTest extends \PHPUnit_Framework_TestCase
 
         $this->listenerPass->process($this->container);
 
+        $delayedEventName = $this->getDelayedEventName('test.event');
+
         $dispatcher = $this->getDispatcher();
-        $listener = $dispatcher->getListeners('test.event', 15);
+        $listener = $dispatcher->getListeners($delayedEventName);
 
         // Check the high priority event listener is first
         \PHPUnit_Framework_Assert::assertCount(2, $listener);
@@ -149,9 +166,25 @@ class ListenerPassTest extends \PHPUnit_Framework_TestCase
 
         $this->listenerPass->process($this->container);
 
+        $delayedEventName1 = $this->getDelayedEventName('test.event1');
+        $delayedEventName2 = $this->getDelayedEventName('test.event2');
+
         $dispatcher = $this->getDispatcher();
 
-        \PHPUnit_Framework_Assert::assertCount(2, $dispatcher->getListeners('test.event1', 10));
-        \PHPUnit_Framework_Assert::assertCount(1, $dispatcher->getListeners('test.event2', 5));
+        \PHPUnit_Framework_Assert::assertCount(2, $dispatcher->getListeners($delayedEventName1));
+        \PHPUnit_Framework_Assert::assertCount(1, $dispatcher->getListeners($delayedEventName2));
+    }
+
+    /**
+     * @param $eventName
+     * @return string
+     */
+    private function getDelayedEventName($eventName)
+    {
+        $registry = $this->getDelayRegistry();
+
+        $delayedEventName = $registry->getDelays($eventName);
+
+        return key($delayedEventName);
     }
 }

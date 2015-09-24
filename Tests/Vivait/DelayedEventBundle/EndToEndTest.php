@@ -3,12 +3,14 @@
 namespace Tests\Vivait\DelayedEventBundle;
 
 use Symfony\Bundle\FrameworkBundle\Console\Application;
+use Symfony\Component\Console\Output\BufferedOutput;
 use Symfony\Component\Console\Output\NullOutput;
 use Symfony\Component\Console\Tester\CommandTester;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\EventDispatcher\Event;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Tests\Vivait\DelayedEventBundle\app\AppKernel;
+use Tests\Vivait\DelayedEventBundle\Mocks\TestListener;
 use Vivait\DelayedEventBundle\EventDispatcher\DelayedEventDispatcher;
 use Vivait\DelayedEventBundle\Queue\QueueInterface;
 
@@ -36,15 +38,6 @@ class EndToEndTest extends \PHPUnit_Framework_TestCase
         $this->consolePath = $consolePath ?: __DIR__ .'/app/console.php';
     }
 
-
-    /**
-     * @return DelayedEventDispatcher
-     */
-    private function getDelayedDispatcher()
-    {
-        return $this->container->get('delayed_event_dispatcher');
-    }
-
     /**
      * @return EventDispatcher
      */
@@ -53,13 +46,6 @@ class EndToEndTest extends \PHPUnit_Framework_TestCase
         return $this->container->get('event_dispatcher');
     }
 
-    /**
-     * @return QueueInterface
-     */
-    private function getQueue()
-    {
-        return $this->container->get('vivait_delayed_event.queue');
-    }
 
     function setUp() {
         $kernel = new AppKernel('test', true);
@@ -69,21 +55,22 @@ class EndToEndTest extends \PHPUnit_Framework_TestCase
         $this->application->setAutoExit(false);
 
         $this->container = $kernel->getContainer();
+
+        TestListener::reset();
     }
 
     public function testListener()
     {
-        $this->getDelayedDispatcher()->addListener('test.event', function() {
-            $this->callback = true;
-        }, '5 seconds');
-
         $this->getDispatcher()->dispatch('test.event', new Event());
 
-        \PHPUnit_Framework_Assert::assertFalse($this->callback);
+        \PHPUnit_Framework_Assert::assertFalse(TestListener::$hasRan);
+
+        $bufferedOutput = new BufferedOutput();
 
         $options = array('command' => 'vivait:delayed_event:worker', '-t' => 2, '--run-once' => true);
-        $this->application->run(new \Symfony\Component\Console\Input\ArrayInput($options), new NullOutput());
+        $this->application->run(new \Symfony\Component\Console\Input\ArrayInput($options), $bufferedOutput);
 
-        \PHPUnit_Framework_Assert::assertTrue($this->callback);
+        \PHPUnit_Framework_Assert::assertContains('Job finished successfully and removed', $bufferedOutput->fetch());
+        \PHPUnit_Framework_Assert::assertTrue(TestListener::$hasRan);
     }
 }

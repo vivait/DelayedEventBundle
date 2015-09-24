@@ -15,14 +15,13 @@ class Memory implements QueueInterface
     public function put($eventName, $event, \DateInterval $delay = null)
     {
         $seconds = IntervalCalculator::convertDateIntervalToSeconds($delay);
-
         $this->jobs[$seconds][] = new Job($eventName, $event);
     }
 
     public function get()
     {
         $currentTime = key($this->jobs);
-        return $currentTime ? array_shift($this->jobs[$currentTime]) : null;
+        return array_shift($this->jobs[$currentTime]);
     }
 
     public function delete($job)

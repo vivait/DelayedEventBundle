@@ -17,11 +17,7 @@ class VivaitDelayedEventBundle extends Bundle
         $container->addCompilerPass(new RegisterNormalizersPass);
 
         $container->addCompilerPass(
-            new RegisterListenersPass(
-                'delayed_event_dispatcher',
-                'delayed_event.event_listener',
-                'delayed_event.event_subscriber'
-            ),
+            new RegisterListenersPass(),
             PassConfig::TYPE_BEFORE_REMOVING
         );
     }

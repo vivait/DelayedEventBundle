@@ -1,22 +1,35 @@
 parameters:
- vivait_delayed_event.dispatcher.class: Vivait\DelayedEventBundle\EventDispatcher\DelayedEventDispatcher
+# vivait_delayed_event.dispatcher.class: Vivait\DelayedEventBundle\EventDispatcher\DelayedEventDispatcher
+ vivait_delayed_event.registry.class: Vivait\DelayedEventBundle\Registry\DelayedEventsRegistry
  vivait_delayed_event.serializer.class: Vivait\DelayedEventBundle\Serializer\SymfonySerializer
+ vivait_delayed_event.delayer.class: Vivait\DelayedEventBundle\Event\EventListenerDelayer
 
 services:
+
+  vivait_delayed_event.registry:
+    class: %vivait_delayed_event.registry.class%
+
   vivait_delayed_event.serializer:
     class: %vivait_delayed_event.serializer.class%
     arguments:
       # collection of normailzers ids, will be provided by the RegisterNormalizers compiler pass
       - []
 
-  vivait_delayed_event.dispatcher:
-    class: %vivait_delayed_event.dispatcher.class%
+  vivait_delayed_event.delayer:
+    class: %vivait_delayed_event.delayer.class%
     arguments:
+      - @vivait_delayed_event.registry
       - @vivait_delayed_event.queue
-      - @event_dispatcher
 
-  delayed_event_dispatcher:
-    alias: vivait_delayed_event.dispatcher
+
+#  vivait_delayed_event.dispatcher:
+#    class: %vivait_delayed_event.dispatcher.class%
+#    arguments:
+#      - @vivait_delayed_event.queue
+#      - @event_dispatcher
+
+#  delayed_event_dispatcher:
+#    alias: vivait_delayed_event.dispatcher
 
   vivait_delayed_event.command.worker:
       class: Vivait\DelayedEventBundle\Command\WorkerCommand

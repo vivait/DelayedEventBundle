@@ -4,6 +4,8 @@ namespace Vivait\DelayedEventBundle\DependencyInjection;
 
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
+use Vivait\DelayedEventBundle\Event\EventDispatcherMediator;
+use Vivait\DelayedEventBundle\Registry\DelayedEventsRegistry;
 
 /**
  * Compiler pass to register tagged services for an event dispatcher.
@@ -13,7 +15,7 @@ class RegisterListenersPass implements CompilerPassInterface
     /**
      * @var string
      */
-    protected $dispatcherService;
+    protected $delayedEventsRegistry;
 
     /**
      * @var string
@@ -26,26 +28,29 @@ class RegisterListenersPass implements CompilerPassInterface
     protected $subscriberTag;
 
     /**
-     * Constructor.
-     *
-     * @param string $dispatcherService Service name of the event dispatcher in processed container
-     * @param string $listenerTag       Tag name used for listener
-     * @param string $subscriberTag     Tag name used for subscribers
+     * @var string
      */
-    public function __construct($dispatcherService = 'delayed_event_dispatcher', $listenerTag = 'delayed_event.event_listener', $subscriberTag = 'delayed_event.event_subscriber')
+    private $delayer;
+
+    public function __construct($delayedEventsRegistry = 'vivait_delayed_event.registry', $delayer = 'vivait_delayed_event.delayer', $listenerTag = 'delayed_event.event_listener', $subscriberTag = 'delayed_event.event_subscriber')
     {
-        $this->dispatcherService = $dispatcherService;
+        $this->delayedEventsRegistry = $delayedEventsRegistry;
         $this->listenerTag = $listenerTag;
         $this->subscriberTag = $subscriberTag;
+        $this->delayer = $delayer;
     }
 
     public function process(ContainerBuilder $container)
     {
-        if (!$container->hasDefinition($this->dispatcherService) && !$container->hasAlias($this->dispatcherService)) {
+        if (!$container->hasDefinition($this->delayedEventsRegistry) && !$container->hasAlias($this->delayedEventsRegistry)) {
             return;
         }
 
-        $definition = $container->findDefinition($this->dispatcherService);
+        $mediator = new EventDispatcherMediator(
+            $container->findDefinition('event_dispatcher'),
+            $container->findDefinition($this->delayedEventsRegistry),
+            $this->delayer
+        );
 
         foreach ($container->findTaggedServiceIds($this->listenerTag) as $id => $events) {
             $def = $container->getDefinition($id);
@@ -73,30 +78,30 @@ class RegisterListenersPass implements CompilerPassInterface
                     $event['method'] = preg_replace('/[^a-z0-9]/i', '', $event['method']);
                 }
 
-                $definition->addMethodCall('addListenerService', array($event['event'], array($id, $event['method']), $delay, $priority));
+                $mediator->addListener($event['event'], array($id, $event['method']), $priority, $delay);
             }
         }
 
-        foreach ($container->findTaggedServiceIds($this->subscriberTag) as $id => $attributes) {
-            $def = $container->getDefinition($id);
-            if (!$def->isPublic()) {
-                throw new \InvalidArgumentException(sprintf('The service "%s" must be public as event subscribers are lazy-loaded.', $id));
-            }
-
-            if ($def->isAbstract()) {
-                throw new \InvalidArgumentException(sprintf('The service "%s" must not be abstract as event subscribers are lazy-loaded.', $id));
-            }
-
-            // We must assume that the class value has been correctly filled, even if the service is created by a factory
-            $class = $container->getParameterBag()->resolveValue($def->getClass());
-
-            $refClass = new \ReflectionClass($class);
-            $interface = 'Symfony\Component\EventDispatcher\EventSubscriberInterface';
-            if (!$refClass->implementsInterface($interface)) {
-                throw new \InvalidArgumentException(sprintf('Service "%s" must implement interface "%s".', $id, $interface));
-            }
-
-            $definition->addMethodCall('addSubscriberService', array($id, $class));
-        }
+//        foreach ($container->findTaggedServiceIds($this->subscriberTag) as $id => $attributes) {
+//            $def = $container->getDefinition($id);
+//            if (!$def->isPublic()) {
+//                throw new \InvalidArgumentException(sprintf('The service "%s" must be public as event subscribers are lazy-loaded.', $id));
+//            }
+//
+//            if ($def->isAbstract()) {
+//                throw new \InvalidArgumentException(sprintf('The service "%s" must not be abstract as event subscribers are lazy-loaded.', $id));
+//            }
+//
+//            // We must assume that the class value has been correctly filled, even if the service is created by a factory
+//            $class = $container->getParameterBag()->resolveValue($def->getClass());
+//
+//            $refClass = new \ReflectionClass($class);
+//            $interface = 'Symfony\Component\EventDispatcher\EventSubscriberInterface';
+//            if (!$refClass->implementsInterface($interface)) {
+//                throw new \InvalidArgumentException(sprintf('Service "%s" must implement interface "%s".', $id, $interface));
+//            }
+//
+//            $definition->addMethodCall('addSubscriberService', array($id, $class));
+//        }
     }
 }
