@@ -10,7 +10,14 @@ vivait_delayed_event:
 
 ## Beanstalkd queue transport
 This relies on [pheanstalk](https://github.com/armetiz/LeezyPheanstalkBundle/blob/master/Resources/doc/1-installation.md) 
-being installed and setup in your config.
+being installed and setup in your config. You can pass extra information to the beanstalk queue using the `configuration` parameter:
+```yaml
+vivait_delayed_event:
+    queue_transport:
+        name: beanstalkd
+        configuration:
+            tube: my_tube
+```
 
 # Creating a delayed event
 Instead of tagging the event with a kernel tag, tag the event with a `delayed_event` tag and provide a delay:

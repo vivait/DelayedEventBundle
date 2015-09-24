@@ -10,5 +10,5 @@ services:
     arguments:
       - @vivait_delayed_event.serializer
       - @leezy.pheanstalk
-      - '%vivait_delayed_event.queue.beanstalk.tube%'
+      - '%vivait_delayed_event.queue.configuration.tube%'
 
