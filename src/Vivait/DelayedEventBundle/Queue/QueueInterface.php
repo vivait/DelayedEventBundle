@@ -16,5 +16,5 @@ interface QueueInterface {
      */
     public function get();
 
-    public function delete($job);
+    public function delete(Job $job);
 }

@@ -15,7 +15,7 @@ class Memory implements QueueInterface
     public function put($eventName, $event, \DateInterval $delay = null)
     {
         $seconds = IntervalCalculator::convertDateIntervalToSeconds($delay);
-        $this->jobs[$seconds][] = new Job($eventName, $event);
+        $this->jobs[$seconds][] = new Job(uniqid(), $eventName, $event);
     }
 
     public function get()
@@ -24,7 +24,7 @@ class Memory implements QueueInterface
         return array_shift($this->jobs[$currentTime]);
     }
 
-    public function delete($job)
+    public function delete(Job $job)
     {
         foreach ($this->jobs as $delay => $jobs) {
             if (($key = array_search($job, $jobs)) !== false) {

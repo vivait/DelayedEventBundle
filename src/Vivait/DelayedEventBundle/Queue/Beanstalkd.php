@@ -51,10 +51,10 @@ class Beanstalkd implements QueueInterface
         $job = $this->beanstalk->reserve();
         $data = json_decode($job->getData(), true);
 
-        return new Job($data['eventName'], $this->serializer->deserialize($data['event']));
+        return new Job($job->getId(), $data['eventName'], $this->serializer->deserialize($data['event']));
     }
 
-    public function delete($job)
+    public function delete(Job $job)
     {
         $this->beanstalk->delete($job);
     }
