@@ -39,3 +39,4 @@ services:
       arguments:
         - @vivait_delayed_event.queue
         - @event_dispatcher
+        - @kernel

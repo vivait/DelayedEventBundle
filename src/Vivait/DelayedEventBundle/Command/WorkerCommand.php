@@ -6,17 +6,19 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
+use Symfony\Component\HttpKernel\Kernel;
+use Vivait\DelayedEventBundle\Queue\Beanstalkd;
 use Vivait\DelayedEventBundle\Queue\QueueInterface;
 use Vivait\DelayedEventBundle\Serializer\SerializerInterface;
 use Wrep\Daemonizable\Command\EndlessCommand;
 
 class WorkerCommand extends EndlessCommand
 {
-	const DEFAULT_TIMEOUT = 5;
+	const DEFAULT_TIMEOUT = 0;
 	const DEFAULT_WAIT_TIMEOUT = null;
 
     /**
-     * @var QueueInterface
+     * @var Beanstalkd
      */
     private $queue;
 
@@ -25,16 +27,23 @@ class WorkerCommand extends EndlessCommand
 	 */
 	private $eventDispatcher;
 
-    /**
-     * @param QueueInterface $queue
-     * @param EventDispatcherInterface $eventDispatcher
-     */
-	function __construct(QueueInterface $queue, EventDispatcherInterface $eventDispatcher) {
+	/**
+	 * @var Kernel
+	 */
+	private $kernel;
+
+	/**
+	 * @param QueueInterface $queue
+	 * @param EventDispatcherInterface $eventDispatcher
+	 * @param Kernel $kernel
+	 */
+	function __construct(QueueInterface $queue, EventDispatcherInterface $eventDispatcher, Kernel $kernel) {
 		$this->queue = $queue;
         $this->eventDispatcher = $eventDispatcher;
+		$this->kernel = $kernel;
 
-        parent::__construct();
-    }
+		parent::__construct();
+	}
 
 	protected function configure()
 	{
@@ -70,28 +79,25 @@ class WorkerCommand extends EndlessCommand
 		    return;
 	    }
 
-        //try {
-            $output->writeln(
-                sprintf("[%s] <info>Performing jobs</info>", $this->getName())
-            );
+        $output->writeln(
+            sprintf("[%s] <info>Performing jobs</info>", $this->getName())
+        );
 
-            $this->eventDispatcher->dispatch($job->getEventName(), $job->getEvent());
+        $this->eventDispatcher->dispatch($job->getEventName(), $job->getEvent());
 
-            // Delete it from the queue
-            $this->queue->delete($job);
+        // Delete it from the queue
+        $this->queue->delete($job);
 
-            $output->writeln(
-                sprintf("[%s] <info>Job finished successfully and removed</info>", $this->getName())
-            );
+        $output->writeln(
+            sprintf("[%s] <info>Job finished successfully and removed</info>", $this->getName())
+        );
+	}
 
-//        } catch (\Exception $e) {
-//            echo($e->getTraceAsString());
-//
-//            $output->writeln(
-//              sprintf("[%s] <error>Job failed: %s (%d)</error>", $this->getName(), $e->getMessage(), $e->getCode())
-//            );
-//
-//            // TODO: Error handle or something
-//        }
-    }
+	public function shutdown()
+	{
+		parent::shutdown();
+
+		$this->kernel->shutdown();
+		exit;
+	}
 }
