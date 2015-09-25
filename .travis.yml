@@ -1,5 +1,8 @@
 language: php
 
+services:
+  - rabbitmq
+
 php:
   - 5.4
   - 5.5

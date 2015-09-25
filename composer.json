@@ -14,10 +14,11 @@
         "php": ">=5.4",
         "symfony/framework-bundle": "~2.3",
         "psr/log": "~1.0",
-        "leezy/pheanstalk-bundle": "~2.0",
         "wrep/daemonizable-command": "~1.2.5"
     },
     "require-dev": {
+        "videlalvaro/php-amqplib": "~2.2",
+        "leezy/pheanstalk-bundle": "~2.0",
         "phpspec/phpspec": "~2.0",
         "phpunit/phpunit": "3.7.*",
         "behat/behat": "~2.5",
