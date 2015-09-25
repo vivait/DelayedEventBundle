@@ -1,0 +1,5 @@
+imports:
+    - { resource: config.yml }
+
+vivait_delayed_event:
+  queue_transport: memory

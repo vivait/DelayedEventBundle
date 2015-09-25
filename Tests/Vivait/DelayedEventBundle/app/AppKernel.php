@@ -3,7 +3,6 @@
 namespace Tests\Vivait\DelayedEventBundle\app;
 
 use Doctrine\Bundle\DoctrineBundle\DoctrineBundle;
-use Doctrine\Bundle\DoctrineCacheBundle\DoctrineCacheBundle;
 use Leezy\PheanstalkBundle\LeezyPheanstalkBundle;
 use Symfony\Bundle\FrameworkBundle\FrameworkBundle;
 use Symfony\Component\HttpKernel\Kernel;
@@ -17,14 +16,14 @@ class AppKernel extends Kernel
         return array(
             new FrameworkBundle(),
             new DoctrineBundle(),
-            new VivaitDelayedEventBundle(),
-            new DoctrineCacheBundle()
+            new LeezyPheanstalkBundle(),
+            new VivaitDelayedEventBundle()
         );
     }
 
     public function registerContainerConfiguration(LoaderInterface $loader)
     {
-        $loader->load(__DIR__.'/config.yml');
+        $loader->load(__DIR__.'/config_' . $this->getEnvironment() . '.yml');
     }
 
     /**

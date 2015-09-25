@@ -1,9 +1,6 @@
 framework:
     secret: "IDontLikeIceCream"
 
-vivait_delayed_event:
-  queue_transport: memory
-
 #leezy_pheanstalk:
 #    enabled: true
 #    pheanstalks:
