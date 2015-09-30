@@ -32,7 +32,13 @@ class DoctrineORM implements TransformerInterface
     public function reverseTransform($data)
     {
         list($class, $id) = $data;
-        return $this->doctrine->getRepository($class)->find($id);
+        $result = $this->doctrine->getRepository($class)->find($id);
+
+        if ($result === null) {
+            throw new \OutOfBoundsException(sprintf('Could not find "%s" entity with ID "%s"', $class, $id));
+        }
+
+        return $result;
     }
 
     public function supports(\ReflectionProperty $property, $value)
