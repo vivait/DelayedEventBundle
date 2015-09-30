@@ -24,7 +24,7 @@ class RegisterNormalizersPass implements CompilerPassInterface
         $normalizers = [];
 
         foreach ($container->findTaggedServiceIds($this->tag) as $id => $attributes) {
-            $normalizers[] = new Reference($id);
+            $normalizers[$id] = new Reference($id);
         }
 
         $definition->replaceArgument(0, $normalizers);
