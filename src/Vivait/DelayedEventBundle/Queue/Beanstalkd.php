@@ -31,7 +31,9 @@ class Beanstalkd implements QueueInterface
     {
         $job = $this->serializer->serialize($event);
 
-        $seconds = IntervalCalculator::convertDateIntervalToSeconds($delay);
+        // Note: We make a delay of at least a second to give doctrine change to commit any transactions
+        // This is caused by delaying an entity from a doctrine hook
+        $seconds = IntervalCalculator::convertDateIntervalToSeconds(min($delay, 1));
 
         $this->beanstalk->putInTube($this->tube, json_encode(
             [
@@ -47,6 +49,13 @@ class Beanstalkd implements QueueInterface
         $data = json_decode($job->getData(), true);
 
         return new Job($job->getId(), $data['eventName'], $this->serializer->deserialize($data['event']));
+    }
+
+    public function hasWaiting()
+    {
+        $stats = $this->beanstalk->statsTube($this->tube);
+
+        return $stats['current-jobs-ready'] > 0 || $stats['current-jobs-delayed'] > 0;
     }
 
     public function delete(Job $job)

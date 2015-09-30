@@ -16,5 +16,10 @@ interface QueueInterface {
      */
     public function get();
 
+    /**
+     * @return boolean
+     */
+    public function hasWaiting();
+
     public function delete(Job $job);
 }
