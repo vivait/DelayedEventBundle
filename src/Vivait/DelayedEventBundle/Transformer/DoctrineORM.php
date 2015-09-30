@@ -2,6 +2,7 @@
 namespace Vivait\DelayedEventBundle\Transformer;
 
 use Doctrine\Common\Persistence\ManagerRegistry;
+use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\UnitOfWork;
 
 class DoctrineORM implements TransformerInterface
