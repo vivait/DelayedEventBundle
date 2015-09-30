@@ -7,9 +7,6 @@ use Vivait\DelayedEventBundle\Serializer\SerializerInterface;
 
 class Beanstalkd implements QueueInterface
 {
-    const PRIORITY = 20;
-    const TTL = 3600;
-
     protected $beanstalk;
     protected $tube;
 
@@ -28,7 +25,6 @@ class Beanstalkd implements QueueInterface
         $this->beanstalk = $beanstalk;
         $this->tube = $tube;
         $this->serializer = $serializer;
-        $this->beanstalk->useTube($this->tube);
     }
 
     public function put($eventName, $event, \DateInterval $delay = null)
@@ -37,18 +33,17 @@ class Beanstalkd implements QueueInterface
 
         $seconds = IntervalCalculator::convertDateIntervalToSeconds($delay);
 
-        $this->beanstalk->put(json_encode(
+        $this->beanstalk->putInTube($this->tube, json_encode(
             [
                 'eventName' => $eventName,
                 'event' => $job
             ]
-        ), self::PRIORITY, $seconds, self::TTL);
+        ), \Pheanstalk_PheanstalkInterface::DEFAULT_PRIORITY, $seconds);
     }
 
     public function get()
     {
-        $this->beanstalk->watch($this->tube);
-        $job = $this->beanstalk->reserve();
+        $job = $this->beanstalk->reserveFromTube($this->tube);
         $data = json_decode($job->getData(), true);
 
         return new Job($job->getId(), $data['eventName'], $this->serializer->deserialize($data['event']));
