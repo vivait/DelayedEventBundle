@@ -19,7 +19,7 @@ interface QueueInterface {
     /**
      * @return boolean
      */
-    public function hasWaiting();
+    public function hasWaiting($pending = false);
 
     public function delete(Job $job);
 }

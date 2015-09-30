@@ -51,11 +51,11 @@ class Beanstalkd implements QueueInterface
         return new Job($job->getId(), $data['eventName'], $this->serializer->deserialize($data['event']));
     }
 
-    public function hasWaiting()
+    public function hasWaiting($pending = false)
     {
         $stats = $this->beanstalk->statsTube($this->tube);
 
-        return $stats['current-jobs-ready'] > 0 || $stats['current-jobs-delayed'] > 0;
+        return $stats['current-jobs-ready'] > 0 || $stats['current-jobs-delayed'] > 0 || ($pending && $stats['current-jobs-reserved'] > 0);
     }
 
     public function delete(Job $job)
