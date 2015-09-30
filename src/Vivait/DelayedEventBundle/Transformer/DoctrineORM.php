@@ -45,9 +45,10 @@ class DoctrineORM implements TransformerInterface
     {
         if (is_object($value)) {
             // Get the entity manager for this entity
+            /** @var EntityManagerInterface $entity_manager */
             $entity_manager = $this->doctrine->getManagerForClass(get_class($value));
 
-            if ($entity_manager && $entity_manager->contains($value)) {
+            if ($entity_manager && $entity_manager->contains($value) && !$entity_manager->getUnitOfWork()->isEntityScheduled($value)) {
                 return true;
             }
         }
