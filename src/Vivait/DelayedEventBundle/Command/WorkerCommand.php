@@ -51,7 +51,8 @@ class WorkerCommand extends EndlessCommand
 			->setName('vivait:delayed_event:worker')
 			->setDescription('Runs the delayed event worker')
 			->addOption('pause', 'p', InputOption::VALUE_OPTIONAL, 'Time to pause between iterations', self::DEFAULT_TIMEOUT)
-			->addOption('timeout', 't', InputOption::VALUE_OPTIONAL, 'Maximum time to wait for a job - use with --run-once when debugging', self::DEFAULT_WAIT_TIMEOUT);
+			->addOption('timeout', 't', InputOption::VALUE_OPTIONAL, 'Maximum time to wait for a job - use with --run-once when debugging', self::DEFAULT_WAIT_TIMEOUT)
+			->addOption('ignore-errors', 'i', InputOption::VALUE_OPTIONAL, 'Ignore errors and keep command alive', false);
 		;
 	}
 
@@ -63,7 +64,9 @@ class WorkerCommand extends EndlessCommand
      */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        // Set pause amount
+	    $ignore_errors = $input->getOption( 'ignore-errors' );
+
+	    // Set pause amount
 	    $pause = $input->getOption( 'pause' );
         $this->setTimeout( $pause );
 
@@ -83,7 +86,20 @@ class WorkerCommand extends EndlessCommand
             sprintf("[%s] <info>Performing jobs</info>", $this->getName())
         );
 
-        $this->eventDispatcher->dispatch($job->getEventName(), $job->getEvent());
+	    try {
+		    $this->eventDispatcher->dispatch($job->getEventName(), $job->getEvent());
+	    }
+	    catch (\Exception $e) {
+		    $this->queue->bury($job);
+
+		    $output->writeln(
+			    sprintf("[%s] <error>Job failed with error: %s</error>", $this->getName(), $e->getMessage())
+		    );
+
+		    if (!$ignore_errors) {
+			    throw $e;
+		    }
+	    }
 
         // Delete it from the queue
         $this->queue->delete($job);
