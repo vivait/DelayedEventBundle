@@ -33,4 +33,22 @@ class Memory implements QueueInterface
         }
     }
 
+    public function bury(Job $job)
+    {
+        foreach ($this->jobs as $delay => $jobs) {
+            if (($key = array_search($job, $jobs)) !== false) {
+                // Add a second delay
+                $this->jobs[$delay + 1][$key];
+                unset($this->jobs[$delay][$key]);
+            }
+        }
+    }
+
+    /**
+     * @return boolean
+     */
+    public function hasWaiting($pending = false)
+    {
+        return count($this->jobs) > 0;
+    }
 }

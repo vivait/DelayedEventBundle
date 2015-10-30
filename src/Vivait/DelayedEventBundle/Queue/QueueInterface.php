@@ -22,4 +22,6 @@ interface QueueInterface {
     public function hasWaiting($pending = false);
 
     public function delete(Job $job);
+
+    public function bury(Job $job);
 }

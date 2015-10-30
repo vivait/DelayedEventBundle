@@ -62,4 +62,9 @@ class Beanstalkd implements QueueInterface
     {
         $this->beanstalk->delete($job);
     }
+
+    public function bury(Job $job)
+    {
+        $this->beanstalk->bury($job);
+    }
 }
