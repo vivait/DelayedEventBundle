@@ -52,7 +52,7 @@ class WorkerCommand extends EndlessCommand
 			->setDescription('Runs the delayed event worker')
 			->addOption('pause', 'p', InputOption::VALUE_OPTIONAL, 'Time to pause between iterations', self::DEFAULT_TIMEOUT)
 			->addOption('timeout', 't', InputOption::VALUE_OPTIONAL, 'Maximum time to wait for a job - use with --run-once when debugging', self::DEFAULT_WAIT_TIMEOUT)
-			->addOption('ignore-errors', 'i', InputOption::VALUE_OPTIONAL, 'Ignore errors and keep command alive', false);
+			->addOption('ignore-errors', 'i', InputOption::VALUE_NONE, 'Ignore errors and keep command alive')
 		;
 	}
 
@@ -64,7 +64,7 @@ class WorkerCommand extends EndlessCommand
      */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-	    $ignore_errors = $input->getOption( 'ignore-errors' );
+	    $ignore_errors = $input->hasOption( 'ignore-errors' );
 
 	    // Set pause amount
 	    $pause = $input->getOption( 'pause' );
