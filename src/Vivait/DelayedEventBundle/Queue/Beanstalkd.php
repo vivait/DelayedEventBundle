@@ -33,7 +33,7 @@ class Beanstalkd implements QueueInterface
 
         // Note: We make a delay of at least a second to give doctrine change to commit any transactions
         // This is caused by delaying an entity from a doctrine hook
-        $seconds = min(IntervalCalculator::convertDateIntervalToSeconds($delay), 1);
+        $seconds = min(IntervalCalculator::convertDateIntervalToSeconds($delay), 5);
 
         $this->beanstalk->putInTube($this->tube, json_encode(
             [
