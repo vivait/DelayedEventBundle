@@ -2,14 +2,13 @@
 
 namespace Vivait\DelayedEventBundle\Command;
 
+use Monolog\Logger;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\HttpKernel\Kernel;
-use Vivait\DelayedEventBundle\Queue\Beanstalkd;
 use Vivait\DelayedEventBundle\Queue\QueueInterface;
-use Vivait\DelayedEventBundle\Serializer\SerializerInterface;
 use Wrep\Daemonizable\Command\EndlessCommand;
 
 class WorkerCommand extends EndlessCommand
@@ -18,7 +17,7 @@ class WorkerCommand extends EndlessCommand
 	const DEFAULT_WAIT_TIMEOUT = null;
 
     /**
-     * @var Beanstalkd
+     * @var QueueInterface
      */
     private $queue;
 
@@ -33,14 +32,23 @@ class WorkerCommand extends EndlessCommand
 	private $kernel;
 
 	/**
+	 * @var Logger
+	 */
+	private $logger;
+
+	private $waiting = false;
+
+	/**
 	 * @param QueueInterface $queue
 	 * @param EventDispatcherInterface $eventDispatcher
 	 * @param Kernel $kernel
+	 * @param Logger $logger
 	 */
-	function __construct(QueueInterface $queue, EventDispatcherInterface $eventDispatcher, Kernel $kernel) {
+	function __construct(QueueInterface $queue, EventDispatcherInterface $eventDispatcher, Kernel $kernel, Logger $logger) {
 		$this->queue = $queue;
         $this->eventDispatcher = $eventDispatcher;
 		$this->kernel = $kernel;
+		$this->logger = $logger;
 
 		parent::__construct();
 	}
@@ -57,11 +65,11 @@ class WorkerCommand extends EndlessCommand
 	}
 
 	/**
-     * @param InputInterface $input
-     * @param OutputInterface $output
-     * @return int|null|void
-     * @throws \Wrep\Daemonizable\Exception\ShutdownEndlessCommandException
-     */
+	 * @param InputInterface $input
+	 * @param OutputInterface $output
+	 * @return void
+	 * @throws \Exception
+	 */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
 	    $ignore_errors = $input->hasOption( 'ignore-errors' );
@@ -73,30 +81,29 @@ class WorkerCommand extends EndlessCommand
         // Amount of time to wait for a job
         $wait_timeout = $input->getOption( 'timeout' );
 
-        $job = $this->queue->get($wait_timeout);
+	    $this->waiting = true;
+        $job = $this->queue->get();
+	    $this->waiting = false;
 
 	    if (!$job) {
-		    $output->writeln(
-			    sprintf("[%s] <error>Couldn't find job before timeout</error>", $this->getName())
-		    );
+		    $this->logger->error("Couldn't find job before timeout");
+
 		    return;
 	    }
 
-        $output->writeln(
-            sprintf("[%s] <info>Performing jobs</info>", $this->getName())
-        );
+        $this->logger->notice(sprintf("Performing job %s", $job->getId()));
 
 	    try {
+		    $this->logger->debug(sprintf("Dispatched event %s", $job->getEventName()));
 		    $this->eventDispatcher->dispatch($job->getEventName(), $job->getEvent());
 	    }
 	    catch (\Exception $e) {
 		    $this->queue->bury($job);
 
-		    $output->writeln(
-			    sprintf("[%s] <error>Job failed with error: %s</error>", $this->getName(), $e->getMessage())
-		    );
+		    $this->logger->warning(sprintf("Job failed with error: %s, stack trace: ", $e->getMessage(), $e->getTraceAsString()));
 
 		    if (!$ignore_errors) {
+			    $this->logger->notice("Re-throwing previous trace");
 			    throw $e;
 		    }
 	    }
@@ -104,15 +111,27 @@ class WorkerCommand extends EndlessCommand
         // Delete it from the queue
         $this->queue->delete($job);
 
-        $output->writeln(
-            sprintf("[%s] <info>Job finished successfully and removed</info>", $this->getName())
-        );
+	    $this->logger->info("Job finished successfully and removed");
 	}
 
 	public function shutdown()
 	{
+		$this->logger->error("Received shutdown signal");
+
 		parent::shutdown();
 
+		if ($this->waiting) {
+			$this->logger->error("Shutting down instantly");
+
+			$this->forceShutdown();
+		}
+		else {
+			$this->logger->error("Waiting for job to finish before shutting down");
+		}
+	}
+
+	protected function forceShutdown()
+	{
 		$this->kernel->shutdown();
 		exit;
 	}

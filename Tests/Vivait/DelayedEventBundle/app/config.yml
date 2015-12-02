@@ -8,6 +8,12 @@ framework:
 #            server: 127.0.0.1
 #            default: true
 
+
+monolog:
+    handlers:
+        console:
+            type: console
+
 doctrine:
     dbal:
         default_connection: default

@@ -67,10 +67,10 @@ class EndToEndTest extends \PHPUnit_Framework_TestCase
 
         $bufferedOutput = new BufferedOutput();
 
-        $options = array('command' => 'vivait:delayed_event:worker', '-t' => 2, '--run-once' => true);
+        $options = array('command' => 'vivait:delayed_event:worker', '-t' => 2, '--run-once' => true, '-v' => true);
         $this->application->run(new \Symfony\Component\Console\Input\ArrayInput($options), $bufferedOutput);
 
-        \PHPUnit_Framework_Assert::assertContains('Job finished successfully and removed', $bufferedOutput->fetch());
+        \PHPUnit_Framework_Assert::assertContains('Performing job', $bufferedOutput->fetch());
         \PHPUnit_Framework_Assert::assertTrue(TestListener::$hasRan);
     }
 }

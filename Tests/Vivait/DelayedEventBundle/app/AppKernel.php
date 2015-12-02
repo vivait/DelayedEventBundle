@@ -5,6 +5,7 @@ namespace Tests\Vivait\DelayedEventBundle\app;
 use Doctrine\Bundle\DoctrineBundle\DoctrineBundle;
 use Leezy\PheanstalkBundle\LeezyPheanstalkBundle;
 use Symfony\Bundle\FrameworkBundle\FrameworkBundle;
+use Symfony\Bundle\MonologBundle\MonologBundle;
 use Symfony\Component\HttpKernel\Kernel;
 use Symfony\Component\Config\Loader\LoaderInterface;
 use Vivait\DelayedEventBundle\VivaitDelayedEventBundle;
@@ -16,6 +17,7 @@ class AppKernel extends Kernel
         return array(
             new FrameworkBundle(),
             new DoctrineBundle(),
+            new MonologBundle(),
             new LeezyPheanstalkBundle(),
             new VivaitDelayedEventBundle()
         );

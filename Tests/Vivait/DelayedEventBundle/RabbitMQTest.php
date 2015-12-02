@@ -61,6 +61,10 @@ class RabbitMQTest extends \PHPUnit_Framework_TestCase
 
     public function testListener()
     {
+        $this->markTestIncomplete(
+            'The rabbitMQ driver has not been implemented yet.'
+        );
+
         $this->getDispatcher()->dispatch('test.event', new Event());
 
         \PHPUnit_Framework_Assert::assertFalse(TestListener::$hasRan);
