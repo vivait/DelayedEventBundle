@@ -100,7 +100,7 @@ class WorkerCommand extends EndlessCommand
 	    catch (\Exception $e) {
 		    $this->queue->bury($job);
 
-		    $this->logger->warning(sprintf("Job failed with error: %s, stack trace: ", $e->getMessage(), $e->getTraceAsString()));
+		    $this->logger->warning(sprintf("Job failed with error: %s, stack trace: %s", $e->getMessage(), $e->getTraceAsString()));
 
 		    if (!$ignore_errors) {
 			    $this->logger->notice("Re-throwing previous trace");
