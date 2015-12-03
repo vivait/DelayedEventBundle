@@ -4,7 +4,7 @@ parameters:
   vivait_delayed_event.queue.configuration.user: 'guest'
   vivait_delayed_event.queue.configuration.password: 'guest'
   vivait_delayed_event.queue.configuration.vhost: '/'
-  vivait_delayed_event.queue.configuration.isist: false
+  vivait_delayed_event.queue.configuration.insist: false
   vivait_delayed_event.queue.configuration.login_method: 'AMQPLAIN'
   vivait_delayed_event.queue.configuration.login_response: ~
   vivait_delayed_event.queue.configuration.locale: 'en_US'
