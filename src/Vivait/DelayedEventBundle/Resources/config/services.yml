@@ -35,11 +35,10 @@ services:
   vivait_delayed_event.command.worker:
       class: Vivait\DelayedEventBundle\Command\WorkerCommand
       tags:
-          -  { name: console.command }
+          - { name: console.command }
+          - { name: monolog.logger, channel: delayed_event }
       arguments:
         - @vivait_delayed_event.queue
         - @event_dispatcher
         - @kernel
-        - @logger
-      tags:
-          - { name: monolog.logger, channel: delayed_event }
+        - @monolog.logger
