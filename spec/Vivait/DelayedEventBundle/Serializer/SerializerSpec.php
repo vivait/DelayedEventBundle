@@ -14,6 +14,13 @@ use Vivait\DelayedEventBundle\Transformer\TransformerInterface;
  */
 class SerializerSpec extends ObjectBehavior
 {
+    function let() {
+        $this->beConstructedWith([
+            'basic' => new BasicTransformer()
+        ]);
+
+    }
+
     function it_serializes_an_event() {
         $serialized = $this->serialize(new Event);
         $deserialized = $this->deserialize($serialized);
@@ -25,16 +32,18 @@ class SerializerSpec extends ObjectBehavior
     }
 
     function it_serializes_properties() {
-        $serialized = $this->serialize(new Event);
+        $event = new Event(3, 'anothertest');
+
+        $serialized = $this->serialize($event);
         $deserialized = $this->deserialize($serialized);
 
-        $deserialized->getInt()->shouldBe(2);
-        $deserialized->getString()->shouldBe('Test');
+        $deserialized->getInt()->shouldBe(3);
+        $deserialized->getString()->shouldBe('anothertest');
     }
 
     function it_runs_a_transformer_on_a_property(TransformerInterface $transformer) {
         $this->beConstructedWith([
-            'basic' => $transformer
+            'all' => $transformer
         ]);
 
         $transformer->supports(Argument::which('getName', 'int'), 2)->willReturn(true);
@@ -52,7 +61,7 @@ class SerializerSpec extends ObjectBehavior
 
     function it_ignores_unserializable_properties(TransformerInterface $transformer) {
         $this->beConstructedWith([
-            'basic' => $transformer
+            'numbers_only' => $transformer
         ]);
 
         $transformer->supports(Argument::which('getName', 'int'), 2)->willReturn(true);
@@ -82,8 +91,19 @@ class SerializerSpec extends ObjectBehavior
 }
 
 class Event {
-    private $int = 2;
-    private $string = 'Test';
+    protected $string;
+    private   $int;
+
+    /**
+     * Event constructor.
+     * @param int $int
+     * @param string $string
+     */
+    public function __construct($int = 2, $string = 'Test')
+    {
+        $this->int = $int;
+        $this->string = $string;
+    }
 
     /**
      * Gets int
