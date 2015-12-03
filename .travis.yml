@@ -34,5 +34,5 @@ before_script:
 
 script:
    - bin/phpspec run --format=pretty
-   - bin/phpunit --testdox
+   - bin/phpunit --verbose
    #- ./vendor/bin/behat --format=pretty --tags '~@php-version'`php php_version_tags.php`
