@@ -41,3 +41,5 @@ services:
         - @event_dispatcher
         - @kernel
         - @logger
+      tags:
+          - { name: monolog.logger, channel: delayed_event }
