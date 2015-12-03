@@ -29,7 +29,6 @@ class EndToEndTest extends \PHPUnit_Framework_TestCase
      * @var Application
      */
     private $application;
-    private $callback = false;
 
     function __construct($consolePath = null)
     {
