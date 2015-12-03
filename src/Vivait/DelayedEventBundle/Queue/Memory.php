@@ -21,6 +21,11 @@ class Memory implements QueueInterface
     public function get()
     {
         $currentTime = key($this->jobs);
+
+        if ($currentTime === null) {
+            return null;
+        }
+
         return array_shift($this->jobs[$currentTime]);
     }
 
