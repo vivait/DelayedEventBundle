@@ -15,8 +15,6 @@ use Vivait\DelayedEventBundle\Transformer\TransformerInterface;
 class SerializerSpec extends ObjectBehavior
 {
     function it_serializes_an_event() {
-        $class = __NAMESPACE__ .'\Event';
-
         $serialized = $this->serialize(new Event);
         $deserialized = $this->deserialize($serialized);
 
@@ -24,6 +22,14 @@ class SerializerSpec extends ObjectBehavior
 
         $deserialized
             ->shouldBeLike(new Event);
+    }
+
+    function it_serializes_properties() {
+        $serialized = $this->serialize(new Event);
+        $deserialized = $this->deserialize($serialized);
+
+        $deserialized->getInt()->shouldBe(2);
+        $deserialized->getString()->shouldBe('Test');
     }
 
     function it_runs_a_transformer_on_a_property(TransformerInterface $transformer) {
@@ -35,7 +41,7 @@ class SerializerSpec extends ObjectBehavior
         $transformer->supports(Argument::which('getName', 'string'), 'Test')->willReturn(true);
 
         $transformer->transform(2)->willReturn('two')->shouldBeCalled();
-        $transformer->reverseTransform('two')->willReturn('2')->shouldBeCalled();
+        $transformer->reverseTransform('two')->willReturn(2)->shouldBeCalled();
 
         $transformer->transform('Test')->willReturn('test')->shouldBeCalled();
         $transformer->reverseTransform('test')->willReturn('Test')->shouldBeCalled();
@@ -53,7 +59,7 @@ class SerializerSpec extends ObjectBehavior
         $transformer->supports(Argument::which('getName', 'string'), 'Test')->willReturn(false);
 
         $transformer->transform(2)->willReturn('two');
-        $transformer->reverseTransform('two')->willReturn('2');
+        $transformer->reverseTransform('two')->willReturn(2);
 
         $transformer->transform('Test')->willReturn('test')->shouldNotBeCalled();
         $transformer->reverseTransform('test')->willReturn('Test')->shouldNotBeCalled();
@@ -78,4 +84,22 @@ class SerializerSpec extends ObjectBehavior
 class Event {
     private $int = 2;
     private $string = 'Test';
+
+    /**
+     * Gets int
+     * @return int
+     */
+    public function getInt()
+    {
+        return $this->int;
+    }
+
+    /**
+     * Gets string
+     * @return string
+     */
+    public function getString()
+    {
+        return $this->string;
+    }
 }
