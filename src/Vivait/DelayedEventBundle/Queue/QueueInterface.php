@@ -12,12 +12,14 @@ interface QueueInterface {
     public function put($eventName, $data, \DateInterval $delay = null);
 
     /**
-     * @return Job|null
+     * @param int $wait_timeout Maximum time in seconds to wait for a job
+     * @return null|Job
      */
-    public function get();
+    public function get($wait_timeout = null);
 
     /**
-     * @return boolean
+     * @param bool $pending Include pending jobs
+     * @return bool
      */
     public function hasWaiting($pending = false);
 

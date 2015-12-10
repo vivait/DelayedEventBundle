@@ -46,9 +46,10 @@ class Beanstalkd implements QueueInterface
         ), \Pheanstalk_PheanstalkInterface::DEFAULT_PRIORITY, $seconds);
     }
 
-    public function get()
+    public function get($wait_timeout = null)
     {
-        $job = $this->beanstalk->reserveFromTube($this->tube);
+
+        $job = $this->beanstalk->reserveFromTube($this->tube, $wait_timeout);
         $data = json_decode($job->getData(), true);
 
         try {

@@ -72,10 +72,10 @@ class WorkerCommand extends EndlessCommand
                 self::DEFAULT_TIMEOUT
             )
             ->addOption(
-                'timeout',
+                'wait-timeout',
                 't',
                 InputOption::VALUE_OPTIONAL,
-                'Maximum time to wait for a job - use with --run-once when debugging',
+                'Maximum time to wait for something to run - use with --run-once when debugging',
                 self::DEFAULT_WAIT_TIMEOUT
             )
             ->addOption('ignore-errors', 'i', InputOption::VALUE_NONE, 'Ignore errors and keep command alive');
@@ -97,11 +97,11 @@ class WorkerCommand extends EndlessCommand
 
         // Amount of time to wait for a job
         // This currently isn't supported
-        $wait_timeout = $input->getOption('timeout');
+        $wait_timeout = $input->getOption('wait-timeout');
 
         try {
             $this->waiting = true;
-            $job = $this->queue->get();
+            $job = $this->queue->get($wait_timeout);
             $this->waiting = false;
         } catch (JobException $exception) {
             $this->logException('Job failed to unserialize', $exception);
