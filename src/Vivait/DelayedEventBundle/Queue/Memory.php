@@ -18,12 +18,24 @@ class Memory implements QueueInterface
         $this->jobs[$seconds][] = new Job(uniqid(), $eventName, $event);
     }
 
-    public function get()
+    public function get($wait_timeout = null)
     {
         $currentTime = key($this->jobs);
 
         if ($currentTime === null) {
             return null;
+        }
+
+        $timeLeft = $currentTime - time();
+
+        // A very rudimentary way of recreating any timeout
+        if ($timeLeft) {
+            if ($wait_timeout !== null && $wait_timeout < $timeLeft) {
+                return null;
+            }
+            else {
+                sleep($timeLeft);
+            }
         }
 
         return array_shift($this->jobs[$currentTime]);
