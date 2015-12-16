@@ -50,6 +50,11 @@ class Beanstalkd implements QueueInterface
     {
 
         $job = $this->beanstalk->reserveFromTube($this->tube, $wait_timeout);
+
+        if (!$job) {
+            return false;
+        }
+
         $data = json_decode($job->getData(), true);
 
         try {
