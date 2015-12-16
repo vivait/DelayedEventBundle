@@ -89,7 +89,7 @@ class WorkerCommand extends EndlessCommand
      */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        $ignore_errors = $input->hasOption('ignore-errors');
+        $ignore_errors = $input->getOption('ignore-errors');
 
         // Set pause amount
         $pause = $input->getOption('pause');
@@ -149,21 +149,21 @@ class WorkerCommand extends EndlessCommand
 
     public function shutdown()
     {
-        $this->logger->error("Received shutdown signal");
+        $this->logger->info("Received shutdown signal");
 
         parent::shutdown();
 
         if ($this->waiting) {
-            $this->logger->error("Shutting down instantly");
-
             $this->forceShutdown();
         } else {
-            $this->logger->error("Waiting for job to finish before shutting down");
+            $this->logger->warning("Waiting for job to finish before shutting down");
         }
     }
 
     protected function forceShutdown()
     {
+        $this->logger->info("Shutting down instantly");
+
         $this->kernel->shutdown();
         exit;
     }
