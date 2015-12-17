@@ -63,7 +63,7 @@ class Beanstalkd implements QueueInterface
         catch (SerializerException $exception) {
             $job = new Job($job->getId(), $data['eventName'], null);
 
-            throw new JobException($job, 'Unserialization of job failed', 0, $job);
+            throw new JobException($job, 'Unserialization of job failed', 0, $exception);
         }
 
         return new Job($job->getId(), $data['eventName'], $unserialized);
