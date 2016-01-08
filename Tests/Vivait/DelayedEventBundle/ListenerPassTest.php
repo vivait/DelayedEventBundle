@@ -69,10 +69,17 @@ class ListenerPassTest extends \PHPUnit_Framework_TestCase
                             'delay' => '10'
                         ]);
 
+        $this->container->register('test_listener2', 'stdClass')
+                        ->addTag('delayed_event.event_listener', [
+                            'event' => 'test.event',
+                            'method' => 'onMyEvent',
+                            'delay' => '10'
+                        ]);
+
         $this->listenerPass->process($this->container);
 
         $dispatcher = $this->getDispatcher();
-        \PHPUnit_Framework_Assert::assertTrue($dispatcher->hasListeners('test.event'));
+        \PHPUnit_Framework_Assert::assertCount(1, $dispatcher->getListeners('test.event'));
     }
 
     public function testDuplicateDates()
