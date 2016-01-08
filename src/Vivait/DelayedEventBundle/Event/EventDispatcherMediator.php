@@ -60,9 +60,10 @@ class EventDispatcherMediator
         // New listeners need a trigger listener registered
         if (!isset($this->triggers[$eventName])) {
             $this->eventDispatcherDefinition->addMethodCall('addListenerService', array($eventName, array($this->delayerId, 'triggerEvent')));
+
+            $this->triggers[$eventName] = true;
         }
     }
-
 
     /**
      * @param $eventName
