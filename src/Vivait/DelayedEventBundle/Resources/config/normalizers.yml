@@ -7,7 +7,7 @@ services:
   vivait_delayed_event.normalizer.doctrineorm:
     class: Vivait\DelayedEventBundle\Transformer\DoctrineORM
     arguments:
-      - @doctrine
+      - "@doctrine"
     tags:
       - name: delayed_event.normalizer
       
