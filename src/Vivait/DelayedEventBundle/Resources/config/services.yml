@@ -19,8 +19,8 @@ services:
   vivait_delayed_event.delayer:
     class: %vivait_delayed_event.delayer.class%
     arguments:
-      - @vivait_delayed_event.registry
-      - @vivait_delayed_event.queue
+      - "@vivait_delayed_event.registry"
+      - "@vivait_delayed_event.queue"
 
 
 #  vivait_delayed_event.dispatcher:
@@ -38,7 +38,7 @@ services:
           - { name: console.command }
           - { name: monolog.logger, channel: delayed_event }
       arguments:
-        - @vivait_delayed_event.queue
-        - @event_dispatcher
-        - @kernel
-        - @logger
+        - "@vivait_delayed_event.queue"
+        - "@event_dispatcher"
+        - "@kernel"
+        - "@logger"
