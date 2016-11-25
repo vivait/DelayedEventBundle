@@ -9,11 +9,13 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\HttpKernel\Kernel;
 use Vivait\DelayedEventBundle\Queue\Exception\JobException;
+use Vivait\DelayedEventBundle\Queue\Job;
 use Vivait\DelayedEventBundle\Queue\QueueInterface;
 use Wrep\Daemonizable\Command\EndlessCommand;
 
 class WorkerCommand extends EndlessCommand
 {
+
     const DEFAULT_TIMEOUT      = 0;
     const DEFAULT_WAIT_TIMEOUT = null;
 
@@ -37,15 +39,18 @@ class WorkerCommand extends EndlessCommand
      */
     private $logger;
 
+    /**
+     * @var bool
+     */
     private $waiting = false;
 
     /**
-     * @param QueueInterface $queue
+     * @param QueueInterface           $queue
      * @param EventDispatcherInterface $eventDispatcher
-     * @param Kernel $kernel
-     * @param Logger $logger
+     * @param Kernel                   $kernel
+     * @param Logger                   $logger
      */
-    function __construct(
+    public function __construct(
         QueueInterface $queue,
         EventDispatcherInterface $eventDispatcher,
         Kernel $kernel,
@@ -59,6 +64,9 @@ class WorkerCommand extends EndlessCommand
         parent::__construct();
     }
 
+    /**
+     * {@inheritdoc}
+     */
     protected function configure()
     {
         $this
@@ -78,25 +86,40 @@ class WorkerCommand extends EndlessCommand
                 'Maximum time to wait for something to run - use with --run-once when debugging',
                 self::DEFAULT_WAIT_TIMEOUT
             )
-            ->addOption('ignore-errors', 'i', InputOption::VALUE_NONE, 'Ignore errors and keep command alive');
+            ->addOption(
+                'ignore-errors',
+                'i',
+                InputOption::VALUE_NONE,
+                'Ignore errors and keep command alive'
+            )
+            ->addOption(
+                'max-retries',
+                'r',
+                InputOption::VALUE_OPTIONAL,
+                'Maximum number of retries before burying job if it fails',
+                0
+            )
+        ;
     }
 
     /**
-     * @param InputInterface $input
+     * @param InputInterface  $input
      * @param OutputInterface $output
+     *
      * @return void
+     *
      * @throws \Exception
      */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        $ignore_errors = $input->getOption('ignore-errors');
+        $ignoreErrors = $input->getOption('ignore-errors');
+        $maxRetries = $input->getOption('max-retries');
 
         // Set pause amount
         $pause = $input->getOption('pause');
         $this->setTimeout($pause);
 
-        // Amount of time to wait for a job
-        // This currently isn't supported
+        // Amount of time to wait for a job. This currently isn't supported.
         $wait_timeout = $input->getOption('wait-timeout');
 
         try {
@@ -111,7 +134,7 @@ class WorkerCommand extends EndlessCommand
                 $this->queue->bury($job);
             }
 
-            if (!$ignore_errors) {
+            if ( ! $ignoreErrors) {
                 $this->logger->notice("Re-throwing previous trace");
                 throw $exception;
             }
@@ -119,7 +142,7 @@ class WorkerCommand extends EndlessCommand
             return;
         }
 
-        if (!$job) {
+        if ( ! $job) {
             $this->logger->error("Couldn't find job before timeout");
 
             return;
@@ -127,26 +150,12 @@ class WorkerCommand extends EndlessCommand
 
         $this->logger->notice(sprintf("Performing job %s", $job->getId()));
 
-        try {
-            $this->logger->debug(sprintf("Dispatched event %s", $job->getEventName()));
-            $this->eventDispatcher->dispatch($job->getEventName(), $job->getEvent());
-        } catch (\Exception $exception) {
-            $this->logException('Failed to perform event', $exception);
-
-            $this->queue->bury($job);
-
-            if (!$ignore_errors) {
-                $this->logger->notice("Re-throwing previous trace");
-                throw $exception;
-            }
-        }
-
-        // Delete it from the queue
-        $this->queue->delete($job);
-
-        $this->logger->info("Job finished successfully and removed");
+        $this->performJob($job, $ignoreErrors, $maxRetries);
     }
 
+    /**
+     * Try and shutdown.
+     */
     public function shutdown()
     {
         $this->logger->info("Received shutdown signal");
@@ -160,6 +169,9 @@ class WorkerCommand extends EndlessCommand
         }
     }
 
+    /**
+     * Force shutdown of command.
+     */
     protected function forceShutdown()
     {
         $this->logger->info("Shutting down instantly");
@@ -168,9 +180,15 @@ class WorkerCommand extends EndlessCommand
         exit;
     }
 
-    protected function logException($message, \Exception $exception)
+    /**
+     * @param string     $message
+     * @param \Exception $exception
+     * @param string     $level
+     */
+    protected function logException($message, \Exception $exception, $level = 'error')
     {
-        $this->logger->error(
+        $this->logger->log(
+            $level,
             sprintf(
                 "%s with exception: %s, stack trace: %s",
                 $message,
@@ -180,7 +198,8 @@ class WorkerCommand extends EndlessCommand
         );
 
         while ($exception = $exception->getPrevious()) {
-            $this->logger->error(
+            $this->logger->log(
+                $level,
                 sprintf(
                     "Previous exception: %s, stack trace: %s",
                     $exception->getMessage(),
@@ -188,5 +207,53 @@ class WorkerCommand extends EndlessCommand
                 )
             );
         }
+    }
+
+    /**
+     * @param Job         $job
+     * @param bool        $ignoreErrors
+     * @param int|string  $maxRetries
+     * @param int         $currentAttemptNumber
+     *
+     * @throws \Exception
+     */
+    private function performJob(Job $job, $ignoreErrors, $maxRetries, $currentAttemptNumber = 0)
+    {
+        $succeeded = false;
+        
+        try {
+            $this->logger->debug(sprintf("Dispatched event %s", $job->getEventName()));
+            $this->eventDispatcher->dispatch($job->getEventName(), $job->getEvent());
+            $succeeded = true;
+        } catch (\Exception $exception) {
+            $lastAttempt = $currentAttemptNumber === (int) $maxRetries;
+            
+            $this->logException(
+                'Failed to perform event, attempt number ' . $currentAttemptNumber,
+                $exception,
+                $lastAttempt ? 'error' : 'warning'
+            );
+
+            if ($lastAttempt) {
+                $this->logger->warning("Burying job");
+                $this->queue->bury($job);
+            }
+
+            if ( ! $ignoreErrors && $currentAttemptNumber === (int) $maxRetries) {
+                $this->logger->notice("Re-throwing previous trace");
+                throw $exception;
+            }
+        }
+        
+        if ($succeeded) {
+            // Delete it from the queue
+            $this->queue->delete($job);
+
+            $this->logger->info("Job finished successfully and removed");
+            
+            return;
+        }
+        
+        $this->performJob($job, $ignoreErrors, $maxRetries, $currentAttemptNumber + 1);
     }
 }
