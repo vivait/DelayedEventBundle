@@ -8,7 +8,13 @@ php:
   - 5.5
   - 5.6
   - 7.0
-  - hhvm
+  - 7.1
+
+env:
+  matrix:
+    - DEPENDENCIES="dev"
+    - DEPENDENCIES="high"
+    - DEPENDENCIES="low"
 
 cache:
   directories:
@@ -17,17 +23,18 @@ cache:
 matrix:
   fast_finish: true
   allow_failures:
-    - php: hhvm
     - php: 7.0
+    - php: 7.1
 
 before_install:
-  - composer selfupdate
+  - composer self-update
+  - composer clear-cache
   
 install:
   - export COMPOSER_ROOT_VERSION=dev-master
-  - if [ "$DEPENDENCIES" == "dev" ]; then perl -pi -e 's/^}$/,"minimum-stability":"dev"}/' composer.json; fi;
-  - if [ "$DEPENDENCIES" != "low" ]; then composer update; fi;
-  - if [ "$DEPENDENCIES" == "low" ]; then composer update --prefer-lowest; fi;
+  - if [ "$DEPENDENCIES" = "dev" ]; then perl -pi -e 's/^}$/,"minimum-stability":"dev"}/' composer.json; fi;
+  - if [ "$DEPENDENCIES" = 'high' ]; then travis_retry composer update --no-interaction --no-ansi --no-progress --no-suggest --optimize-autoloader --prefer-stable; fi
+  - if [ "$DEPENDENCIES" = 'low' ]; then travis_retry composer update --no-interaction --no-ansi --no-progress --no-suggest --optimize-autoloader --prefer-stable --prefer-lowest; fi
 
 before_script:
   - echo "<?php if (PHP_VERSION_ID >= 50400) echo ',@php5.4';" > php_version_tags.php
