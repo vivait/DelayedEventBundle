@@ -3,9 +3,7 @@
 namespace Tests\Vivait\DelayedEventBundle;
 
 use Matthias\SymfonyConfigTest\PhpUnit\AbstractConfigurationTestCase;
-use Symfony\Component\Config\Definition\Processor;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
-use Symfony\Component\Yaml\Yaml;
 use Vivait\DelayedEventBundle\DependencyInjection\Configuration;
 
 class ConfigurationTest extends AbstractConfigurationTestCase
