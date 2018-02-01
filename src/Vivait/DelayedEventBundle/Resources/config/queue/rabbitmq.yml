@@ -41,3 +41,4 @@ services:
     arguments:
       - @vivait_delayed_event.serializer
       - @vivait_delayed_event.queue.rabbitmq.amqp
+      - @vivait_delayed_event.queue.configuration.queue

@@ -1,11 +1,14 @@
 Delayed Event Bundle
 ===============
+
+[![Build Status](https://travis-ci.org/vivait/DelayedEventBundle.svg?branch=master)](https://travis-ci.org/vivait/DelayedEventBundle)
+
 Triggers a Symfony event an arbitrary period after the original event
 
 # Configure the service
 ```yaml
 vivait_delayed_event:
-    queue_transport: beanstalkd # default
+    queue_transport: beanstalkd # default, also supported: 'rabbitmq'
 ```
 
 ## Beanstalkd queue transport
@@ -17,6 +20,18 @@ vivait_delayed_event:
         name: beanstalkd
         configuration:
             tube: my_tube
+```
+
+
+## RabbitMQ queue transport
+This relies on [php-amqplib](https://github.com/videlalvaro/php-amqplib) 
+being installed and setup in your config. You can pass extra information to the beanstalk queue using the `configuration` parameter:
+```yaml
+vivait_delayed_event:
+    queue_transport:
+        name: rabbitmq
+        configuration:
+            queue: my_queue
 ```
 
 # Creating a delayed event

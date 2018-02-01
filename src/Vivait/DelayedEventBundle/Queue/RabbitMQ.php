@@ -11,7 +11,11 @@ use Vivait\DelayedEventBundle\Serializer\SerializerInterface;
 
 class RabbitMQ implements QueueInterface
 {
-    protected $queue_name;
+
+    /**
+     * @var string
+     */
+    protected $queueName;
 
     /**
      * @var SerializerInterface
@@ -24,17 +28,17 @@ class RabbitMQ implements QueueInterface
     private $channel;
 
     /**
-     * @param SerializerInterface $serializer
-     * @param \Pheanstalk_PheanstalkInterface $beanstalk
-     * @param string $queue_name
+     * @param SerializerInterface  $serializer
+     * @param AMQPStreamConnection $connection
+     * @param string               $queueName
      */
-    public function __construct(SerializerInterface $serializer, AMQPStreamConnection $connection, $queue_name = 'delayed_events')
+    public function __construct(SerializerInterface $serializer, AMQPStreamConnection $connection, $queueName = 'delayed_events')
     {
-        $this->queue_name = $queue_name;
+        $this->queueName = $queueName;
         $this->serializer = $serializer;
         $this->channel = $connection->channel();
 
-        $this->channel->queue_declare($queue_name, false, true, false, false);
+        $this->channel->queue_declare($queueName, false, true, false, false);
     }
 
     public function put($eventName, $event, \DateInterval $delay = null)
@@ -51,15 +55,15 @@ class RabbitMQ implements QueueInterface
             ]
         ), ['delivery_mode' => 2]);
 
-        $this->channel->basic_publish($message, '', $this->queue_name);
+        $this->channel->basic_publish($message, '', $this->queueName);
     }
 
-    public function get()
+    public function get($waitTimeout = null)
     {
         $job = null;
 
         $this->channel->basic_qos(null, 1, null);
-        $this->channel->basic_consume($this->queue_name, '', false, false, false, false, function(GenericContent $message) use (&$job) {
+        $this->channel->basic_consume($this->queueName, '', false, false, false, false, function(GenericContent $message) use (&$job) {
             $deliveryTag = $message->get('delivery_tag');
             $data = json_decode($message->get('body'), true);
 
@@ -72,19 +76,34 @@ class RabbitMQ implements QueueInterface
         });
 
         // Wait for it to find the next job
-//        while(count($this->channel->callbacks)) {
-            $this->channel->wait();
-//        }
+        $this->channel->wait();
 
-        if (!($job instanceOf Job)) {
+        if ( ! ($job instanceOf Job)) {
             throw new \RuntimeException('RabbitMQ callback did not produce job');
         }
 
         return $job;
     }
 
+    /**
+     * @inheritdoc
+     */
     public function delete(Job $job)
     {
         $this->channel->basic_ack($job->getId());
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function hasWaiting($pending = false)
+    {
+        // Unsure how waiting works in AMQP at the minute...
+        return true;
+    }
+
+    public function bury(Job $job)
+    {
+
     }
 }

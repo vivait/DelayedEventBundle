@@ -9,6 +9,13 @@ namespace Vivait\DelayedEventBundle\Queue;
 
 interface QueueInterface {
 
+    /**
+     * @param string             $eventName
+     * @param                    $data
+     * @param \DateInterval|null $delay
+     *
+     * @return mixed
+     */
     public function put($eventName, $data, \DateInterval $delay = null);
 
     /**
