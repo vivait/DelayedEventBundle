@@ -31,8 +31,8 @@ before_install:
   
 install:
   - export COMPOSER_ROOT_VERSION=dev-master
-  - if [ "$DEPENDENCIES" = 'high' ]; then travis_retry composer update --no-interaction --no-ansi --no-progress --no-suggest --optimize-autoloader --prefer-stable; fi
-  - if [ "$DEPENDENCIES" = 'low' ]; then travis_retry composer update --no-interaction --no-ansi --no-progress --no-suggest --optimize-autoloader --prefer-stable --prefer-lowest; fi
+  - if [ "$DEPENDENCIES" = 'high' ]; then travis_retry php -d memory_limit=-1 $(which composer) update --no-interaction --no-ansi --no-progress --no-suggest --optimize-autoloader --prefer-stable; fi
+  - if [ "$DEPENDENCIES" = 'low' ]; then travis_retry php -d memory_limit=-1 $(which composer) update --no-interaction --no-ansi --no-progress --no-suggest --optimize-autoloader --prefer-stable --prefer-lowest; fi
 
 before_script:
   - echo "<?php if (PHP_VERSION_ID >= 50400) echo ',@php5.4';" > php_version_tags.php
