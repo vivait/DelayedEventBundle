@@ -2,7 +2,7 @@
 composer.phar
 composer.lock
 vendor/
-
+/bin
 ### PhpStorm ###
 # Covers JetBrains IDEs: IntelliJ, RubyMine, PhpStorm, AppCode, PyCharm
 
