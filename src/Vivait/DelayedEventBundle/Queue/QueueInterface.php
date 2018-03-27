@@ -9,7 +9,7 @@ namespace Vivait\DelayedEventBundle\Queue;
 
 interface QueueInterface {
 
-    public function put($eventName, $data, \DateInterval $delay = null);
+    public function put($eventName, $data, \DateInterval $delay = null, $currentAttempt = 1);
 
     /**
      * @param int $wait_timeout Maximum time in seconds to wait for a job

@@ -2,6 +2,7 @@
 
 namespace Vivait\DelayedEventBundle\Queue;
 
+use Vivait\DelayedEventBundle\Event\RetryableEvent;
 use Vivait\DelayedEventBundle\IntervalCalculator;
 use Vivait\DelayedEventBundle\Queue\Exception\JobException;
 use Vivait\DelayedEventBundle\Serializer\Exception\SerializerException;
@@ -29,9 +30,15 @@ class Beanstalkd implements QueueInterface
         $this->serializer = $serializer;
     }
 
-    public function put($eventName, $event, \DateInterval $delay = null)
+    public function put($eventName, $event, \DateInterval $delay = null, $currentAttempt = 1)
     {
         $job = $this->serializer->serialize($event);
+
+        $maxRetries = 1;
+
+        if ($event instanceof RetryableEvent) {
+            $maxRetries = $event->getMaxRetries();
+        }
 
         // Note: We make a delay of at least a second to give doctrine change to commit any transactions
         // This is caused by delaying an entity from a doctrine hook
@@ -42,6 +49,8 @@ class Beanstalkd implements QueueInterface
                 'eventName' => $eventName,
                 'event' => $job,
                 'tube' => $this->tube,
+                'maxRetries' => $maxRetries,
+                'currentAttempt' => $currentAttempt,
             ]
         ), \Pheanstalk_PheanstalkInterface::DEFAULT_PRIORITY, $seconds);
     }

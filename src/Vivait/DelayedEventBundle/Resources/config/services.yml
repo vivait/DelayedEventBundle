@@ -42,3 +42,14 @@ services:
         - "@event_dispatcher"
         - "@kernel"
         - "@logger"
+
+  vivait_delayed_event.command.process_job:
+      class: Vivait\DelayedEventBundle\Command\ProcessJobCommand
+      tags:
+          - { name: console.command }
+          - { name: monolog.logger, channel: delayed_event }
+      arguments:
+        - "@event_dispatcher"
+        - "@kernel"
+        - "@logger"
+        - "@vivait_delayed_event.serializer"

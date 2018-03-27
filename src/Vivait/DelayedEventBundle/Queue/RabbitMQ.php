@@ -37,7 +37,7 @@ class RabbitMQ implements QueueInterface
         $this->channel->queue_declare($queue_name, false, true, false, false);
     }
 
-    public function put($eventName, $event, \DateInterval $delay = null)
+    public function put($eventName, $event, \DateInterval $delay = null, $currentAttempt = 1)
     {
         $job = $this->serializer->serialize($event);
 
