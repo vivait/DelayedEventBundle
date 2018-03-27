@@ -6,15 +6,38 @@ use Symfony\Component\EventDispatcher\Event;
 
 class Job implements JobInterface
 {
+    /**
+     * @var string
+     */
     private $eventName;
+
+    /**
+     * @var Event
+     */
     private $event;
+
+    /**
+     * @var mixed
+     */
     private $id;
 
-    public function __construct($id, $eventName, $event)
+    /**
+     * @var int
+     */
+    private $attempts;
+
+    /**
+     * @var int
+     */
+    private $maxRetries;
+
+    public function __construct($id, $eventName, $event, $maxRetries = 1, $attempts = 1)
     {
         $this->eventName = $eventName;
         $this->event = $event;
         $this->id = $id;
+        $this->attempts = $attempts;
+        $this->maxRetries = $maxRetries;
     }
 
     /**
@@ -42,5 +65,21 @@ class Job implements JobInterface
     public function getId()
     {
         return $this->id;
+    }
+
+    /**
+     * @return int
+     */
+    public function getAttempts()
+    {
+        return $this->attempts;
+    }
+
+    /**
+     * @return int
+     */
+    public function getMaxRetries()
+    {
+        return $this->maxRetries;
     }
 }
