@@ -2,6 +2,7 @@
 
 namespace Vivait\DelayedEventBundle\Queue;
 
+use Pheanstalk\PheanstalkInterface;
 use Vivait\DelayedEventBundle\Event\RetryableEvent;
 use Vivait\DelayedEventBundle\IntervalCalculator;
 use Vivait\DelayedEventBundle\Queue\Exception\JobException;
@@ -20,7 +21,7 @@ class Beanstalkd implements QueueInterface
 
     /**
      * @param SerializerInterface $serializer
-     * @param \Pheanstalk_PheanstalkInterface $beanstalk
+     * @param PheanstalkInterface $beanstalk
      * @param string $tube
      */
     public function __construct(SerializerInterface $serializer, $beanstalk, $tube = 'delayed_events')
@@ -52,7 +53,7 @@ class Beanstalkd implements QueueInterface
                 'maxRetries' => $maxRetries,
                 'currentAttempt' => $currentAttempt,
             ]
-        ), \Pheanstalk_PheanstalkInterface::DEFAULT_PRIORITY, $seconds);
+        ), PheanstalkInterface::DEFAULT_PRIORITY, $seconds);
     }
 
     public function get($wait_timeout = null)
