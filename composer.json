@@ -13,8 +13,8 @@
     "require": {
         "php": ">=5.4",
         "symfony/framework-bundle": "~2.3|~3.0",
-        "wrep/daemonizable-command": "~1.2.5",
-        "symfony/monolog-bundle": "^2.8"
+        "wrep/daemonizable-command": "~1.2.5|~2.0",
+        "symfony/monolog-bundle": "^2.8|~3.0"
     },
     "require-dev": {
         "videlalvaro/php-amqplib": "~2.2",
