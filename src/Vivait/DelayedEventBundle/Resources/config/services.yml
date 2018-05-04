@@ -8,16 +8,16 @@ parameters:
 services:
 
   vivait_delayed_event.registry:
-    class: %vivait_delayed_event.registry.class%
+    class: "%vivait_delayed_event.registry.class%"
 
   vivait_delayed_event.serializer:
-    class: %vivait_delayed_event.serializer.class%
+    class: "%vivait_delayed_event.serializer.class%"
     arguments:
       # collection of normailzers ids, will be provided by the RegisterNormalizers compiler pass
       - []
 
   vivait_delayed_event.delayer:
-    class: %vivait_delayed_event.delayer.class%
+    class: "%vivait_delayed_event.delayer.class%"
     arguments:
       - "@vivait_delayed_event.registry"
       - "@vivait_delayed_event.queue"

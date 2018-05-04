@@ -12,13 +12,14 @@
     "prefer-stable": true,
     "require": {
         "php": ">=5.4",
-        "symfony/framework-bundle": "~2.3",
-        "wrep/daemonizable-command": "~1.2.5",
-        "symfony/monolog-bundle": "^2.8"
+        "symfony/framework-bundle": "~2.3|~3.0",
+        "wrep/daemonizable-command": "~1.2.5|~2.0",
+        "symfony/monolog-bundle": "^2.8|~3.0",
+        "pda/pheanstalk": "^3.0.0"
     },
     "require-dev": {
         "videlalvaro/php-amqplib": "~2.2",
-        "leezy/pheanstalk-bundle": "~2.0",
+        "leezy/pheanstalk-bundle": "^3.3.0",
         "phpspec/phpspec": "~2.0",
         "phpunit/phpunit": "3.7.*",
         "behat/behat": "~2.5",
