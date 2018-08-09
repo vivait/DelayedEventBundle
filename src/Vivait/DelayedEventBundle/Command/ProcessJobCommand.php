@@ -150,9 +150,9 @@ class ProcessJobCommand extends ContainerAwareCommand
     private function performJob($eventName, $event, $maxRetries, $currentAttempt)
     {
         try {
-            $this->logger->notice("Dispatched event: {$eventName}");
-            $this->logger->notice("Max retries: {$maxRetries}");
-            $this->logger->notice("Current attempt: {$currentAttempt}");
+            $this->logger->debug("Dispatched event: {$eventName}");
+            $this->logger->debug("Max retries: {$maxRetries}");
+            $this->logger->debug("Current attempt: {$currentAttempt}");
             $this->eventDispatcher->dispatch($eventName, $event);
         } catch (\Exception $exception) {
             $lastAttempt = $currentAttempt >= $maxRetries;
