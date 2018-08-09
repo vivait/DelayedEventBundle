@@ -130,12 +130,12 @@ class WorkerCommand extends EndlessCommand
             $this->logException('Job failed to unserialize', $exception);
 
             if (($job = $exception->getJob())) {
-                $this->logger->notice(sprintf("Burying job %s", $job->getId()));
+                $this->logger->warning(sprintf("Burying job %s", $job->getId()));
                 $this->queue->bury($job);
             }
 
             if ( ! $ignoreErrors) {
-                $this->logger->notice("Re-throwing previous trace");
+                $this->logger->warning("Re-throwing previous trace");
                 throw $exception;
             }
 
@@ -148,7 +148,7 @@ class WorkerCommand extends EndlessCommand
             return;
         }
 
-        $this->logger->notice(sprintf("Performing job %s", $job->getId()));
+        $this->logger->debug(sprintf("Performing job %s", $job->getId()));
 
         $this->performJob($job, $ignoreErrors, $maxRetries);
     }
@@ -165,7 +165,7 @@ class WorkerCommand extends EndlessCommand
         if ($this->waiting) {
             $this->forceShutdown();
         } else {
-            $this->logger->warning("Waiting for job to finish before shutting down");
+            $this->logger->info("Waiting for job to finish before shutting down");
         }
     }
 
@@ -240,7 +240,7 @@ class WorkerCommand extends EndlessCommand
             }
 
             if ( ! $ignoreErrors && $currentAttemptNumber === (int) $maxRetries) {
-                $this->logger->notice("Re-throwing previous trace");
+                $this->logger->warning("Re-throwing previous trace");
                 throw $exception;
             }
         }
@@ -249,7 +249,7 @@ class WorkerCommand extends EndlessCommand
             // Delete it from the queue
             $this->queue->delete($job);
 
-            $this->logger->info("Job finished successfully and removed");
+            $this->logger->debug("Job finished successfully and removed");
             
             return;
         }
