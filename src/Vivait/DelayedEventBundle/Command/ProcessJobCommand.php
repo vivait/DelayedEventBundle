@@ -168,7 +168,7 @@ class ProcessJobCommand extends ContainerAwareCommand
             return self::JOB_SOFT_FAIL;
         }
 
-        $this->logger->info("Job finished successfully and removed");
+        $this->logger->debug("Job finished successfully and removed");
 
         return self::JOB_SUCCESS;
     }
