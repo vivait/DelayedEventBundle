@@ -82,14 +82,14 @@ class ProcessJobCommand extends ContainerAwareCommand
         $decodedJob = base64_decode($input->getArgument('event'));
 
         if ($decodedJob === false) {
-            $this->logger->error("Could not decode event");
+            $this->logger->error(sprintf('Could not decode event: [%s]', $input->getArgument('event')));
 
             return self::JOB_HARD_FAIL;
         }
         try {
             $event = $this->serializer->deserialize($decodedJob);
         } catch (FailedTransformationException $e) {
-            $this->logger->error("Could not deserialize event");
+            $this->logger->error("Could not deserialize event: [{$decodedJob}]");
 
             return self::JOB_HARD_FAIL;
         }
@@ -104,7 +104,7 @@ class ProcessJobCommand extends ContainerAwareCommand
      */
     protected function forceShutdown()
     {
-        $this->logger->info("Shutting down instantly");
+        $this->logger->info('Shutting down instantly');
 
         $this->kernel->shutdown();
         exit;
@@ -120,7 +120,7 @@ class ProcessJobCommand extends ContainerAwareCommand
         $this->logger->log(
             $level,
             sprintf(
-                "%s with exception: %s, stack trace: %s",
+                '%s with exception: %s, stack trace: %s',
                 $message,
                 $exception->getMessage(),
                 $exception->getTraceAsString()
@@ -131,7 +131,7 @@ class ProcessJobCommand extends ContainerAwareCommand
             $this->logger->log(
                 $level,
                 sprintf(
-                    "Previous exception: %s, stack trace: %s",
+                    'Previous exception: %s, stack trace: %s',
                     $exception->getMessage(),
                     $exception->getTraceAsString()
                 )
@@ -160,7 +160,7 @@ class ProcessJobCommand extends ContainerAwareCommand
             $this->logException("Failed to perform event, attempt number {$currentAttempt} of {$maxRetries}", $exception, $lastAttempt ? 'error' : 'warning');
 
             if ($lastAttempt) {
-                $this->logger->warning("Reached the last attempt for the job");
+                $this->logger->warning("Reached the last attempt for the job: {$eventName}");
 
                 return self::JOB_HARD_FAIL;
             }
@@ -168,7 +168,7 @@ class ProcessJobCommand extends ContainerAwareCommand
             return self::JOB_SOFT_FAIL;
         }
 
-        $this->logger->debug("Job finished successfully and removed");
+        $this->logger->debug('Job finished successfully and removed');
 
         return self::JOB_SUCCESS;
     }

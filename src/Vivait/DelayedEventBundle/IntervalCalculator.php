@@ -27,7 +27,7 @@ abstract class IntervalCalculator {
     {
         if (!($delay instanceOf DateInterval)) {
             if (is_numeric($delay)) {
-                $delay = 'PT'. intval($delay) .'S';
+                $delay = 'PT'. (int) $delay .'S';
             }
 
             try {

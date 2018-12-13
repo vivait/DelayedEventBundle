@@ -15,7 +15,7 @@ class Memory implements QueueInterface
     public function put($eventName, $event, \DateInterval $delay = null, $currentAttempt = 1)
     {
         $seconds = time() - IntervalCalculator::convertDateIntervalToSeconds($delay);
-        $this->jobs[$seconds][] = new Job(uniqid(), $eventName, $event);
+        $this->jobs[$seconds][] = new Job(uniqid('job', true), $eventName, $event);
     }
 
     public function get($wait_timeout = null)
@@ -62,6 +62,8 @@ class Memory implements QueueInterface
     }
 
     /**
+     * @param bool $pending
+     *
      * @return boolean
      */
     public function hasWaiting($pending = false)

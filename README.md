@@ -1,5 +1,7 @@
 Delayed Event Bundle
 ===============
+[![Build Status](https://travis-ci.org/vivait/DelayedEventBundle.svg?branch=master)](https://travis-ci.org/vivait/DelayedEventBundle)
+
 Triggers a Symfony event an arbitrary period after the original event
 
 # Configure the service

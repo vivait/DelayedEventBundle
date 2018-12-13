@@ -24,9 +24,9 @@ class RabbitMQ implements QueueInterface
     private $channel;
 
     /**
-     * @param SerializerInterface $serializer
-     * @param \Pheanstalk_PheanstalkInterface $beanstalk
-     * @param string $queue_name
+     * @param SerializerInterface  $serializer
+     * @param AMQPStreamConnection $connection
+     * @param string               $queue_name
      */
     public function __construct(SerializerInterface $serializer, AMQPStreamConnection $connection, $queue_name = 'delayed_events')
     {

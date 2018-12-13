@@ -130,12 +130,12 @@ class WorkerCommand extends EndlessCommand
             $this->logException('Job failed to unserialize', $exception);
 
             if (($job = $exception->getJob())) {
-                $this->logger->warning(sprintf("Burying job %s", $job->getId()));
+                $this->logger->warning(sprintf('Burying job %s', $job->getId()));
                 $this->queue->bury($job);
             }
 
             if ( ! $ignoreErrors) {
-                $this->logger->warning("Re-throwing previous trace");
+                $this->logger->warning('Re-throwing previous trace');
                 throw $exception;
             }
 
@@ -148,7 +148,7 @@ class WorkerCommand extends EndlessCommand
             return;
         }
 
-        $this->logger->debug(sprintf("Performing job %s", $job->getId()));
+        $this->logger->debug(sprintf('Performing job %s', $job->getId()));
 
         $this->performJob($job, $ignoreErrors, $maxRetries);
     }
@@ -158,14 +158,14 @@ class WorkerCommand extends EndlessCommand
      */
     public function shutdown()
     {
-        $this->logger->info("Received shutdown signal");
+        $this->logger->info('Received shutdown signal');
 
         parent::shutdown();
 
         if ($this->waiting) {
             $this->forceShutdown();
         } else {
-            $this->logger->info("Waiting for job to finish before shutting down");
+            $this->logger->info('Waiting for job to finish before shutting down');
         }
     }
 
@@ -174,7 +174,7 @@ class WorkerCommand extends EndlessCommand
      */
     protected function forceShutdown()
     {
-        $this->logger->info("Shutting down instantly");
+        $this->logger->info('Shutting down instantly');
 
         $this->kernel->shutdown();
         exit;
@@ -190,7 +190,7 @@ class WorkerCommand extends EndlessCommand
         $this->logger->log(
             $level,
             sprintf(
-                "%s with exception: %s, stack trace: %s",
+                '%s with exception: %s, stack trace: %s',
                 $message,
                 $exception->getMessage(),
                 $exception->getTraceAsString()
@@ -201,7 +201,7 @@ class WorkerCommand extends EndlessCommand
             $this->logger->log(
                 $level,
                 sprintf(
-                    "Previous exception: %s, stack trace: %s",
+                    'Previous exception: %s, stack trace: %s',
                     $exception->getMessage(),
                     $exception->getTraceAsString()
                 )
@@ -222,7 +222,7 @@ class WorkerCommand extends EndlessCommand
         $succeeded = false;
         
         try {
-            $this->logger->debug(sprintf("Dispatched event %s", $job->getEventName()));
+            $this->logger->debug(sprintf('Dispatched event %s', $job->getEventName()));
             $this->eventDispatcher->dispatch($job->getEventName(), $job->getEvent());
             $succeeded = true;
         } catch (\Exception $exception) {
@@ -235,12 +235,12 @@ class WorkerCommand extends EndlessCommand
             );
 
             if ($lastAttempt) {
-                $this->logger->warning("Burying job");
+                $this->logger->warning('Burying job');
                 $this->queue->bury($job);
             }
 
             if ( ! $ignoreErrors && $currentAttemptNumber === (int) $maxRetries) {
-                $this->logger->warning("Re-throwing previous trace");
+                $this->logger->warning('Re-throwing previous trace');
                 throw $exception;
             }
         }
@@ -249,7 +249,7 @@ class WorkerCommand extends EndlessCommand
             // Delete it from the queue
             $this->queue->delete($job);
 
-            $this->logger->debug("Job finished successfully and removed");
+            $this->logger->debug('Job finished successfully and removed');
             
             return;
         }

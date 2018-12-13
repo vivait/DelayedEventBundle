@@ -18,6 +18,7 @@ class EventListenerDelayer
 
     /**
      * @param \Vivait\DelayedEventBundle\Registry\DelayedEventsRegistry $delayedEventsRegistry
+     * @param QueueInterface                                            $queue
      */
     public function __construct(DelayedEventsRegistry $delayedEventsRegistry, QueueInterface $queue)
     {

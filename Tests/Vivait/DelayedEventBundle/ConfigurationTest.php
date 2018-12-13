@@ -8,11 +8,12 @@ use Vivait\DelayedEventBundle\DependencyInjection\Configuration;
 
 class ConfigurationTest extends AbstractConfigurationTestCase
 {
+
     /**
      * Return the instance of ConfigurationInterface that should be used by the
      * Configuration-specific assertions in this test-case
      *
-     * @return \Symfony\Component\Config\Definition\ConfigurationInterface
+     * @return Configuration
      */
     protected function getConfiguration()
     {
