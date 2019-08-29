@@ -2,7 +2,9 @@
 
 namespace Vivait\DelayedEventBundle\Queue;
 
+use DateInterval;
 use Pheanstalk\PheanstalkInterface;
+use Vivait\DelayedEventBundle\Event\PriorityAwareEvent;
 use Vivait\DelayedEventBundle\Event\RetryableEvent;
 use Vivait\DelayedEventBundle\IntervalCalculator;
 use Vivait\DelayedEventBundle\Queue\Exception\JobException;
@@ -31,7 +33,7 @@ class Beanstalkd implements QueueInterface
         $this->serializer = $serializer;
     }
 
-    public function put($eventName, $event, \DateInterval $delay = null, $currentAttempt = 1)
+    public function put($eventName, $event, DateInterval $delay = null, $currentAttempt = 1)
     {
         $job = $this->serializer->serialize($event);
 
@@ -41,11 +43,19 @@ class Beanstalkd implements QueueInterface
             $maxRetries = $event->getMaxRetries();
         }
 
+        $priority = PheanstalkInterface::DEFAULT_PRIORITY;
+
+        if ($event instanceof PriorityAwareEvent) {
+            $priority = $event->getPriority();
+        }
+
         // Note: We make a delay of at least a second to give doctrine change to commit any transactions
         // This is caused by delaying an entity from a doctrine hook
         $seconds = max(IntervalCalculator::convertDateIntervalToSeconds($delay), 1);
 
-        $this->beanstalk->putInTube($this->tube, json_encode(
+        $this->beanstalk->putInTube(
+            $this->tube,
+            json_encode(
             [
                 'eventName' => $eventName,
                 'event' => $job,
@@ -53,7 +63,10 @@ class Beanstalkd implements QueueInterface
                 'maxRetries' => $maxRetries,
                 'currentAttempt' => $currentAttempt,
             ]
-        ), PheanstalkInterface::DEFAULT_PRIORITY, $seconds);
+            ),
+            $priority,
+            $seconds
+        );
     }
 
     public function get($wait_timeout = null)
