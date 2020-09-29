@@ -16,23 +16,39 @@ class Beanstalkd implements QueueInterface
     protected $beanstalk;
     protected $tube;
 
+    public const DEFAULT_TTR = 60;
+
     /**
      * @var SerializerInterface
      */
     private $serializer;
 
+    private $ttr;
+
     /**
      * @param SerializerInterface $serializer
      * @param PheanstalkInterface $beanstalk
      * @param string $tube
+     * @param int $ttr The length of time in seconds which a process has to complete
      */
-    public function __construct(SerializerInterface $serializer, $beanstalk, $tube = 'delayed_events')
+    public function __construct(
+        SerializerInterface $serializer,
+        $beanstalk,
+        $tube = 'delayed_events',
+        $ttr = self::DEFAULT_TTR)
     {
         $this->beanstalk = $beanstalk;
         $this->tube = $tube;
+        $this->ttr = $ttr;
         $this->serializer = $serializer;
     }
 
+    /**
+     * @param $eventName
+     * @param $event
+     * @param DateInterval|null $delay
+     * @param int $currentAttempt
+     */
     public function put($eventName, $event, DateInterval $delay = null, $currentAttempt = 1)
     {
         $job = $this->serializer->serialize($event);
@@ -56,22 +72,23 @@ class Beanstalkd implements QueueInterface
         $this->beanstalk->putInTube(
             $this->tube,
             json_encode(
-            [
-                'eventName' => $eventName,
-                'event' => $job,
-                'tube' => $this->tube,
-                'maxRetries' => $maxRetries,
-                'currentAttempt' => $currentAttempt,
-            ]
+                [
+                    'eventName' => $eventName,
+                    'event' => $job,
+                    'tube' => $this->tube,
+                    'maxRetries' => $maxRetries,
+                    'currentAttempt' => $currentAttempt,
+                    'ttr' => $this->ttr,
+                ]
             ),
             $priority,
-            $seconds
+            $seconds,
+            $this->ttr
         );
     }
 
     public function get($wait_timeout = null)
     {
-
         $job = $this->beanstalk->reserveFromTube($this->tube, $wait_timeout);
 
         if (!$job) {
@@ -82,8 +99,7 @@ class Beanstalkd implements QueueInterface
 
         try {
             $unserialized = $this->serializer->deserialize($data['event']);
-        }
-        catch (SerializerException $exception) {
+        } catch (SerializerException $exception) {
             $job = new Job($job->getId(), $data['eventName'], null);
 
             throw new JobException($job, 'Unserialization of job failed', 0, $exception);

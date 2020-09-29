@@ -11,12 +11,16 @@ vivait_delayed_event:
 ## Beanstalkd queue transport
 This relies on [pheanstalk](https://github.com/armetiz/LeezyPheanstalkBundle/blob/master/Resources/doc/1-installation.md) 
 being installed and setup in your config. You can pass extra information to the beanstalk queue using the `configuration` parameter:
+
+Be aware TTR is the time a process can run before it effectively retries, if it's too short there is a realistic
+possibility that a job will be processed twice.
 ```yaml
 vivait_delayed_event:
     queue_transport:
         name: beanstalkd
         configuration:
             tube: my_tube
+            ttr: 60
 ```
 
 # Creating a delayed event

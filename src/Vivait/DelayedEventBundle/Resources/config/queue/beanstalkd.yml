@@ -11,4 +11,5 @@ services:
       - "@vivait_delayed_event.serializer"
       - "@leezy.pheanstalk"
       - '%vivait_delayed_event.queue.configuration.tube%'
+      - '%vivait_delayed_event.queue.configuration.ttr%'
 
