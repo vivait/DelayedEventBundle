@@ -22,6 +22,7 @@ services:
             - "@vivait_delayed_event.queue"
 
     Vivait\DelayedEventBundle\Command\JobDispatcherCommand:
+        class: Vivait\DelayedEventBundle\Command\JobDispatcherCommand
         tags:
             - { name: console.command }
             - { name: monolog.logger, channel: worker }
@@ -32,6 +33,7 @@ services:
             - '@Vivait\Backoff\Strategies\AbstractBackoffStrategy'
 
     Vivait\DelayedEventBundle\Command\ProcessJobCommand:
+        class: Vivait\DelayedEventBundle\Command\ProcessJobCommand
         tags:
             - { name: console.command }
             - { name: monolog.logger, channel: worker }
