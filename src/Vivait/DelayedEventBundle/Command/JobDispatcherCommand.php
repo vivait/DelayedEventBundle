@@ -15,7 +15,6 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\HttpKernel\KernelInterface;
 use Symfony\Component\Process\Process;
 use Throwable;
-use Vivait\ApiBundle\Logger\RemoveHandlersTrait;
 use Vivait\Backoff\Strategies\AbstractBackoffStrategy;
 use Vivait\TenantBundle\Model\Tenant;
 use Wrep\Daemonizable\Command\EndlessContainerAwareCommand;
@@ -28,8 +27,6 @@ use function is_numeric;
  */
 class JobDispatcherCommand extends EndlessContainerAwareCommand
 {
-    use RemoveHandlersTrait;
-
     /**
      * How long should we wait for a job before recycling.
      *
@@ -174,7 +171,6 @@ class JobDispatcherCommand extends EndlessContainerAwareCommand
 
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        $this->removePheanstalkHandlers();
         $environmentList = $this->getEnvironmentList($input->getOption('environmentList'));
         $this->watchEnvironmentTubes($environmentList);
 
@@ -554,18 +550,6 @@ class JobDispatcherCommand extends EndlessContainerAwareCommand
             // Any other exceptions should be considered a hard fail
             return ProcessJobCommand::JOB_HARD_FAIL;
         }
-    }
-
-    /**
-     * Removes all handlers that aren't of the ConsoleHandler type in the Pheanstalk channel.
-     */
-    protected function removePheanstalkHandlers(): void
-    {
-        $pheanstalkLogger = $this->removeHandlersNotOfType(
-            $this->getContainer()->get('monolog.logger.pheanstalk'),
-            ConsoleHandler::class
-        );
-        $this->getContainer()->set('monolog.logger.pheanstalk', $pheanstalkLogger);
     }
 
     /**
