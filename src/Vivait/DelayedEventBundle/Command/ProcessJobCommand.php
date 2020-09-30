@@ -2,23 +2,27 @@
 
 namespace Vivait\DelayedEventBundle\Command;
 
+use Exception;
 use Monolog\Logger;
 use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\HttpKernel\KernelInterface;
 use Vivait\DelayedEventBundle\Serializer\Exception\FailedTransformationException;
 use Vivait\DelayedEventBundle\Serializer\Serializer;
 
+/**
+ * Class ProcessJobCommand
+ * @package Vivait\DelayedEventBundle\Command
+ */
 class ProcessJobCommand extends ContainerAwareCommand
 {
 
-    const JOB_SUCCESS = 0;
-    const JOB_SOFT_FAIL = 1;
-    const JOB_HARD_FAIL = 2;
+    public const JOB_SUCCESS = 0;
+    public const JOB_SOFT_FAIL = 1;
+    public const JOB_HARD_FAIL = 2;
 
     /**
      * @var EventDispatcherInterface
@@ -42,133 +46,95 @@ class ProcessJobCommand extends ContainerAwareCommand
 
     /**
      * @param EventDispatcherInterface $eventDispatcher
-     * @param KernelInterface          $kernel
-     * @param Logger                   $logger
-     * @param Serializer               $serializer
+     * @param KernelInterface $kernel
+     * @param Logger $logger
+     * @param Serializer $serializer
      */
-    public function __construct(EventDispatcherInterface $eventDispatcher, KernelInterface $kernel, Logger $logger, Serializer $serializer)
-    {
+    public function __construct(
+        EventDispatcherInterface $eventDispatcher,
+        KernelInterface $kernel,
+        Logger $logger,
+        Serializer $serializer
+    ) {
         $this->eventDispatcher = $eventDispatcher;
         $this->kernel = $kernel;
         $this->logger = $logger;
         $this->serializer = $serializer;
 
-        parent::__construct('vivait:delayed_event:process_job');
+        parent::__construct('vivait:worker:process_job');
     }
 
     /**
-     * {@inheritdoc}
+     * {}
      */
     protected function configure()
     {
         $this
-            ->setDescription('When given a job, it re-dispatches that job into Symfony to be processed.')
+            ->setDescription('When given a job, it dispatches that job into Symfony to be processed.')
             ->addArgument('eventName', InputArgument::REQUIRED, 'The event name that you want to re-dispatch')
             ->addArgument('event', InputArgument::REQUIRED, 'The event that you want to re-dispatch')
-            ->addOption('max-retries', 'r', InputOption::VALUE_REQUIRED, 'Maximum number of retries before burying job if it fails', 1)
-            ->addOption('current-attempt', 'c', InputOption::VALUE_REQUIRED, 'Current attempt of the job being processed', 1);
+            ->addArgument('jobId', InputArgument::OPTIONAL, 'Optional ID of the job to track in the logs');
     }
 
     /**
-     * @param InputInterface  $input
+     * @param InputInterface $input
      * @param OutputInterface $output
      *
      * @return int
      *
-     * @throws \Exception
+     * @throws Exception
      */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        $decodedJob = base64_decode($input->getArgument('event'));
+        $encodedEvent = $input->getArgument('event');
+        $eventName = $input->getArgument('eventName');
+        $jobId = $input->getArgument('jobId') ?? 'N/A';
 
-        if ($decodedJob === false) {
-            $this->logger->error("Could not decode event");
+        $event = base64_decode($encodedEvent);
+        if ($event === false) {
+            $this->logger->error('Could not decode event: ' . $encodedEvent);
 
             return self::JOB_HARD_FAIL;
         }
         try {
-            $event = $this->serializer->deserialize($decodedJob);
+            $event = $this->serializer->deserialize($event);
         } catch (FailedTransformationException $e) {
-            $this->logger->error("Could not deserialize event");
+            $this->logger->error('Could not deserialize event: ' . $event);
 
             return self::JOB_HARD_FAIL;
         }
 
-        $eventName = $input->getArgument('eventName');
-
-        return $this->performJob($eventName, $event, $input->getOption('max-retries'), $input->getOption('current-attempt'));
-    }
-
-    /**
-     * Force shutdown of command.
-     */
-    protected function forceShutdown()
-    {
-        $this->logger->info("Shutting down instantly");
-
-        $this->kernel->shutdown();
-        exit;
-    }
-
-    /**
-     * @param string     $message
-     * @param \Exception $exception
-     * @param string     $level
-     */
-    protected function logException($message, \Exception $exception, $level = 'error')
-    {
-        $this->logger->log(
-            $level,
-            sprintf(
-                "%s with exception: %s, stack trace: %s",
-                $message,
-                $exception->getMessage(),
-                $exception->getTraceAsString()
-            )
+        return $this->performJob(
+            $jobId,
+            $eventName,
+            $event
         );
-
-        while ($exception = $exception->getPrevious()) {
-            $this->logger->log(
-                $level,
-                sprintf(
-                    "Previous exception: %s, stack trace: %s",
-                    $exception->getMessage(),
-                    $exception->getTraceAsString()
-                )
-            );
-        }
     }
 
     /**
+     * @param string $jobId
      * @param string $eventName
      * @param object $event
-     * @param int    $maxRetries
-     * @param int    $currentAttempt
      *
      * @return int
      */
-    private function performJob($eventName, $event, $maxRetries, $currentAttempt)
+    private function performJob($jobId, $eventName, $event)
     {
         try {
-            $this->logger->debug("Dispatched event: {$eventName}");
-            $this->logger->debug("Max retries: {$maxRetries}");
-            $this->logger->debug("Current attempt: {$currentAttempt}");
             $this->eventDispatcher->dispatch($eventName, $event);
-        } catch (\Exception $exception) {
-            $lastAttempt = $currentAttempt >= $maxRetries;
-
-            $this->logException("Failed to perform event, attempt number {$currentAttempt} of {$maxRetries}", $exception, $lastAttempt ? 'error' : 'warning');
-
-            if ($lastAttempt) {
-                $this->logger->warning("Reached the last attempt for the job");
-
-                return self::JOB_HARD_FAIL;
-            }
+        } catch (Exception $exception) {
+            $this->logger->error(
+                "Job [{$jobId}] threw an exception: " . $exception->getMessage(),
+                [
+                    'jobId' => $jobId,
+                    'exception' => $exception->getMessage(),
+                    'stackTrace' => $exception->getTrace()
+                ]
+            );
 
             return self::JOB_SOFT_FAIL;
         }
-
-        $this->logger->debug("Job finished successfully and removed");
+        $this->logger->info("Job [{$jobId}] completed successfully");
 
         return self::JOB_SUCCESS;
     }

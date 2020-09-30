@@ -7,12 +7,25 @@
 namespace Vivait\DelayedEventBundle\Queue;
 
 
+use DateInterval;
+
+/**
+ * Interface QueueInterface
+ * @package Vivait\DelayedEventBundle\Queue
+ */
 interface QueueInterface {
 
-    public function put($eventName, $data, \DateInterval $delay = null, $currentAttempt = 1);
+    /**
+     * @param $eventName
+     * @param $data
+     * @param DateInterval|null $delay
+     * @param int $currentAttempt
+     * @return mixed
+     */
+    public function put($eventName, $data, DateInterval $delay = null, $currentAttempt = 1);
 
     /**
-     * @param int $wait_timeout Maximum time in seconds to wait for a job
+     * @param null $wait_timeout Maximum time in seconds to wait for a job
      * @return null|Job
      */
     public function get($wait_timeout = null);
@@ -23,7 +36,15 @@ interface QueueInterface {
      */
     public function hasWaiting($pending = false);
 
+    /**
+     * @param Job $job
+     * @return mixed
+     */
     public function delete(Job $job);
 
+    /**
+     * @param Job $job
+     * @return mixed
+     */
     public function bury(Job $job);
 }

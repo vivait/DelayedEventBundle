@@ -2,7 +2,10 @@
 
 namespace Tests\Vivait\DelayedEventBundle;
 
+use PHPUnit_Framework_Assert;
+use PHPUnit_Framework_TestCase;
 use Symfony\Bundle\FrameworkBundle\Console\Application;
+use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Output\BufferedOutput;
 use Symfony\Component\Console\Output\NullOutput;
 use Symfony\Component\Console\Tester\CommandTester;
@@ -17,7 +20,7 @@ use Vivait\DelayedEventBundle\Queue\QueueInterface;
 /**
  * Checks that an end-to-end delayed event works
  */
-class RabbitMQTest extends \PHPUnit_Framework_TestCase
+class RabbitMQTest extends PHPUnit_Framework_TestCase
 {
     /**
      * @var ContainerBuilder
@@ -31,6 +34,10 @@ class RabbitMQTest extends \PHPUnit_Framework_TestCase
     private $application;
     private $callback = false;
 
+    /**
+     * RabbitMQTest constructor.
+     * @param null $consolePath
+     */
     function __construct($consolePath = null)
     {
         parent::__construct();
@@ -47,7 +54,7 @@ class RabbitMQTest extends \PHPUnit_Framework_TestCase
     }
 
 
-    function setUp() {
+    public function setUp() {
         $kernel = new AppKernel('rabbitmq', true);
         $kernel->boot();
 
@@ -67,14 +74,14 @@ class RabbitMQTest extends \PHPUnit_Framework_TestCase
 
         $this->getDispatcher()->dispatch('test.event', new Event());
 
-        \PHPUnit_Framework_Assert::assertFalse(TestListener::$hasRan);
+        PHPUnit_Framework_Assert::assertFalse(TestListener::$hasRan);
 
         $bufferedOutput = new BufferedOutput();
 
         $options = array('command' => 'vivait:delayed_event:worker', '-t' => 2, '--run-once' => true);
-        $this->application->run(new \Symfony\Component\Console\Input\ArrayInput($options), $bufferedOutput);
+        $this->application->run(new ArrayInput($options), $bufferedOutput);
 
-        \PHPUnit_Framework_Assert::assertContains('Job finished successfully and removed', $bufferedOutput->fetch());
-        \PHPUnit_Framework_Assert::assertTrue(TestListener::$hasRan);
+        PHPUnit_Framework_Assert::assertContains('Job finished successfully and removed', $bufferedOutput->fetch());
+        PHPUnit_Framework_Assert::assertTrue(TestListener::$hasRan);
     }
 }

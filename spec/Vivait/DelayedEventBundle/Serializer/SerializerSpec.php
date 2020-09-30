@@ -4,6 +4,7 @@ namespace spec\Vivait\DelayedEventBundle\Serializer;
 
 use PhpSpec\ObjectBehavior;
 use Prophecy\Argument;
+use ReflectionProperty;
 use Symfony\Component\Routing\Matcher\TraceableUrlMatcher;
 use Vivait\DelayedEventBundle\Serializer\Serializer;
 use Vivait\DelayedEventBundle\Transformer\BasicTransformer;
@@ -14,14 +15,14 @@ use Vivait\DelayedEventBundle\Transformer\TransformerInterface;
  */
 class SerializerSpec extends ObjectBehavior
 {
-    function let() {
+    public function let() {
         $this->beConstructedWith([
             'basic' => new BasicTransformer()
         ]);
 
     }
 
-    function it_serializes_an_event() {
+    public function it_serializes_an_event() {
         $serialized = $this->serialize(new Event);
         $deserialized = $this->deserialize($serialized);
 
@@ -31,7 +32,7 @@ class SerializerSpec extends ObjectBehavior
             ->shouldBeLike(new Event);
     }
 
-    function it_serializes_properties() {
+    public function it_serializes_properties() {
         $event = new Event(3, 'anothertest');
 
         $serialized = $this->serialize($event);
@@ -41,6 +42,10 @@ class SerializerSpec extends ObjectBehavior
         $deserialized->getString()->shouldBe('anothertest');
     }
 
+    /**
+     * @param TransformerInterface $transformer
+     * @throws \ReflectionException
+     */
     function it_runs_a_transformer_on_a_property(TransformerInterface $transformer) {
         $this->beConstructedWith([
             'all' => $transformer
@@ -59,6 +64,10 @@ class SerializerSpec extends ObjectBehavior
         $this->deserialize($serialized);
     }
 
+    /**
+     * @param TransformerInterface $transformer
+     * @throws \ReflectionException
+     */
     function it_ignores_unserializable_properties(TransformerInterface $transformer) {
         $this->beConstructedWith([
             'numbers_only' => $transformer
@@ -77,11 +86,14 @@ class SerializerSpec extends ObjectBehavior
         $this->deserialize($serialized);
     }
 
+    /**
+     * @return \Closure[]
+     */
     public function getMatchers()
     {
         return [
             'haveKeyWithValue' => function($subject, $key, $value) {
-                $property = new \ReflectionProperty(get_class($subject), $key);
+                $property = new ReflectionProperty(get_class($subject), $key);
                 $property->setAccessible(true);
 
                 return $property->getValue($subject) == $value;
@@ -90,6 +102,10 @@ class SerializerSpec extends ObjectBehavior
     }
 }
 
+/**
+ * Class Event
+ * @package spec\Vivait\DelayedEventBundle\Serializer
+ */
 class Event {
     protected $string;
     private   $int;

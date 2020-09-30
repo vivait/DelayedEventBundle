@@ -2,6 +2,12 @@
 
 namespace Tests\Vivait\DelayedEventBundle\Mocks;
 
+use Exception;
+
+/**
+ * Class TestExceptionListener
+ * @package Tests\Vivait\DelayedEventBundle\Mocks
+ */
 class TestExceptionListener
 {
     /**
@@ -17,7 +23,7 @@ class TestExceptionListener
     /**
      * @param mixed $args
      * 
-     * @throws \Exception
+     * @throws Exception
      */
     public function onListenEvent($args)
     {
@@ -30,7 +36,7 @@ class TestExceptionListener
         self::$attempt++;
         
         if ($throw) {
-            throw new \Exception();
+            throw new Exception();
         }
         
         self::$succeeded = true;

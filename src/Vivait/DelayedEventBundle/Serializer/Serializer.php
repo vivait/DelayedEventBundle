@@ -1,10 +1,18 @@
 <?php
 namespace Vivait\DelayedEventBundle\Serializer;
 
+use Exception;
+use ReflectionClass;
+use ReflectionObject;
+use ReflectionProperty;
 use Vivait\DelayedEventBundle\Serializer\Exception\FailedTransformationException;
 use Vivait\DelayedEventBundle\Serializer\Exception\InvalidTransformerException;
 use Vivait\DelayedEventBundle\Transformer\TransformerInterface;
 
+/**
+ * Class Serializer
+ * @package Vivait\DelayedEventBundle\Serializer
+ */
 class Serializer implements SerializerInterface
 {
     /**
@@ -24,11 +32,11 @@ class Serializer implements SerializerInterface
      */
     public function serialize($event)
     {
-        $reflect = new \ReflectionObject($event);
+        $reflect = new ReflectionObject($event);
         $props = $reflect->getProperties(
-            \ReflectionProperty::IS_PUBLIC |
-            \ReflectionProperty::IS_PROTECTED |
-            \ReflectionProperty::IS_PRIVATE
+            ReflectionProperty::IS_PUBLIC |
+            ReflectionProperty::IS_PROTECTED |
+            ReflectionProperty::IS_PRIVATE
         );
 
         $data = [];
@@ -47,7 +55,7 @@ class Serializer implements SerializerInterface
                     try {
                         $value = $transformer->transform($value);
                     }
-                    catch (\Exception $exception) {
+                    catch (Exception $exception) {
                         throw new FailedTransformationException(sprintf('Transformer "%s" failed when serializing', $transformerName), 0, $exception);
                     }
 
@@ -75,19 +83,19 @@ class Serializer implements SerializerInterface
     /**
      * @param string $serializedData
      * @return object
-     * @throws FailedTransformationException
+     * @throws \ReflectionException
      */
     public function deserialize($serializedData)
     {
-        list($class, $data) = unserialize($serializedData);
+        [$class, $data] = unserialize($serializedData);
 
-        $reflect = new \ReflectionClass($class);
+        $reflect = new ReflectionClass($class);
         $event = $reflect->newInstanceWithoutConstructor();
 
         $props = $reflect->getProperties(
-            \ReflectionProperty::IS_PUBLIC |
-            \ReflectionProperty::IS_PROTECTED |
-            \ReflectionProperty::IS_PRIVATE
+            ReflectionProperty::IS_PUBLIC |
+            ReflectionProperty::IS_PROTECTED |
+            ReflectionProperty::IS_PRIVATE
         );
 
         foreach ($props as $property) {
@@ -100,7 +108,7 @@ class Serializer implements SerializerInterface
             }
 
             // Find out the transformers
-            list($value, $transformers) = $data[$attribute];
+            [$value, $transformers] = $data[$attribute];
 
             // Apply any reverse transformations
             foreach ($transformers as $transformerName){
@@ -111,7 +119,7 @@ class Serializer implements SerializerInterface
                 try {
                     $value = $this->transformers[$transformerName]->reverseTransform($value);
                 }
-                catch (\Exception $exception) {
+                catch (Exception $exception) {
                     throw new FailedTransformationException(sprintf('Transformer "%s" failed when unserializing', $transformerName), 0, $exception);
                 }
             }

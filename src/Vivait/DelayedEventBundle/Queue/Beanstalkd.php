@@ -4,6 +4,8 @@ namespace Vivait\DelayedEventBundle\Queue;
 
 use DateInterval;
 use Pheanstalk\PheanstalkInterface;
+use Psr\Log\LoggerInterface;
+use Ramsey\Uuid\Uuid;
 use Vivait\DelayedEventBundle\Event\PriorityAwareEvent;
 use Vivait\DelayedEventBundle\Event\RetryableEvent;
 use Vivait\DelayedEventBundle\IntervalCalculator;
@@ -11,6 +13,10 @@ use Vivait\DelayedEventBundle\Queue\Exception\JobException;
 use Vivait\DelayedEventBundle\Serializer\Exception\SerializerException;
 use Vivait\DelayedEventBundle\Serializer\SerializerInterface;
 
+/**
+ * Class Beanstalkd
+ * @package Vivait\DelayedEventBundle\Queue
+ */
 class Beanstalkd implements QueueInterface
 {
     protected $beanstalk;
@@ -23,20 +29,28 @@ class Beanstalkd implements QueueInterface
      */
     private $serializer;
 
+    /**
+     * @var LoggerInterface
+     */
+    private $logger;
+
     private $ttr;
 
     /**
+     * @param LoggerInterface $logger
      * @param SerializerInterface $serializer
      * @param PheanstalkInterface $beanstalk
      * @param string $tube
      * @param int $ttr The length of time in seconds which a process has to complete
      */
     public function __construct(
+        LoggerInterface $logger,
         SerializerInterface $serializer,
         $beanstalk,
         $tube = 'delayed_events',
-        $ttr = self::DEFAULT_TTR)
-    {
+        $ttr = self::DEFAULT_TTR
+    ) {
+        $this->logger = $logger;
         $this->beanstalk = $beanstalk;
         $this->tube = $tube;
         $this->ttr = $ttr;
@@ -53,10 +67,10 @@ class Beanstalkd implements QueueInterface
     {
         $job = $this->serializer->serialize($event);
 
-        $maxRetries = 1;
+        $maxAttempts = 1;
 
         if ($event instanceof RetryableEvent) {
-            $maxRetries = $event->getMaxRetries();
+            $maxAttempts = $event->getMaxRetries();
         }
 
         $priority = PheanstalkInterface::DEFAULT_PRIORITY;
@@ -69,14 +83,17 @@ class Beanstalkd implements QueueInterface
         // This is caused by delaying an entity from a doctrine hook
         $seconds = max(IntervalCalculator::convertDateIntervalToSeconds($delay), 1);
 
-        $this->beanstalk->putInTube(
+        $jobId = (string)Uuid::uuid4();
+
+        $beanstalkdId = $this->beanstalk->putInTube(
             $this->tube,
             json_encode(
                 [
+                    'id' => $jobId,
                     'eventName' => $eventName,
                     'event' => $job,
                     'tube' => $this->tube,
-                    'maxRetries' => $maxRetries,
+                    'maxAttempts' => $maxAttempts,
                     'currentAttempt' => $currentAttempt,
                     'ttr' => $this->ttr,
                 ]
@@ -85,8 +102,28 @@ class Beanstalkd implements QueueInterface
             $seconds,
             $this->ttr
         );
+
+        $this->logger->info(
+            sprintf(
+                'Job [%s] has been added to the queue',
+                $jobId
+            ),
+            [
+                'beanstalkId' => $beanstalkdId,
+                'jobId' => $jobId,
+                'tube' => $this->tube,
+                'eventName' => $eventName,
+                'priority' => $priority,
+                'delaySeconds' => $seconds,
+                'ttr' => $this->ttr
+            ]
+        );
     }
 
+    /**
+     * @param null $wait_timeout
+     * @return false|Job|null
+     */
     public function get($wait_timeout = null)
     {
         $job = $this->beanstalk->reserveFromTube($this->tube, $wait_timeout);
@@ -108,6 +145,10 @@ class Beanstalkd implements QueueInterface
         return new Job($job->getId(), $data['eventName'], $unserialized);
     }
 
+    /**
+     * @param false $pending
+     * @return bool
+     */
     public function hasWaiting($pending = false)
     {
         $stats = $this->beanstalk->statsTube($this->tube);
@@ -115,11 +156,17 @@ class Beanstalkd implements QueueInterface
         return $stats['current-jobs-ready'] > 0 || $stats['current-jobs-delayed'] > 0 || ($pending && $stats['current-jobs-reserved'] > 0);
     }
 
+    /**
+     * @param Job $job
+     */
     public function delete(Job $job)
     {
         $this->beanstalk->delete($job);
     }
 
+    /**
+     * @param Job $job
+     */
     public function bury(Job $job)
     {
         $this->beanstalk->bury($job);

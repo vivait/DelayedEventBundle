@@ -7,12 +7,31 @@
 
 namespace Vivait\DelayedEventBundle\Transformer;
 
+use ReflectionProperty;
+
+/**
+ * Interface TransformerInterface
+ * @package Vivait\DelayedEventBundle\Transformer
+ */
 interface TransformerInterface
 {
-    public function supports(\ReflectionProperty $property, $value);
+    /**
+     * @param ReflectionProperty $property
+     * @param $value
+     * @return mixed
+     */
+    public function supports(ReflectionProperty $property, $value);
 
+    /**
+     * @param $data
+     * @return mixed
+     */
     public function transform($data);
 
+    /**
+     * @param $data
+     * @return mixed
+     */
     public function reverseTransform($data);
 
 }

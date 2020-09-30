@@ -6,13 +6,17 @@ use Matthias\SymfonyConfigTest\PhpUnit\AbstractConfigurationTestCase;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Vivait\DelayedEventBundle\DependencyInjection\Configuration;
 
+/**
+ * Class ConfigurationTest
+ * @package Tests\Vivait\DelayedEventBundle
+ */
 class ConfigurationTest extends AbstractConfigurationTestCase
 {
     /**
      * Return the instance of ConfigurationInterface that should be used by the
      * Configuration-specific assertions in this test-case
      *
-     * @return \Symfony\Component\Config\Definition\ConfigurationInterface
+     * @return Configuration
      */
     protected function getConfiguration()
     {

@@ -2,6 +2,7 @@
 
 namespace Vivait\DelayedEventBundle\DependencyInjection;
 
+use InvalidArgumentException;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Vivait\DelayedEventBundle\Event\EventDispatcherMediator;
@@ -32,6 +33,13 @@ class RegisterListenersPass implements CompilerPassInterface
      */
     private $delayer;
 
+    /**
+     * RegisterListenersPass constructor.
+     * @param string $delayedEventsRegistry
+     * @param string $delayer
+     * @param string $listenerTag
+     * @param string $subscriberTag
+     */
     public function __construct($delayedEventsRegistry = 'vivait_delayed_event.registry', $delayer = 'vivait_delayed_event.delayer', $listenerTag = 'delayed_event.event_listener', $subscriberTag = 'delayed_event.event_subscriber')
     {
         $this->delayedEventsRegistry = $delayedEventsRegistry;
@@ -40,6 +48,9 @@ class RegisterListenersPass implements CompilerPassInterface
         $this->delayer = $delayer;
     }
 
+    /**
+     * @param ContainerBuilder $container
+     */
     public function process(ContainerBuilder $container)
     {
         if (!$container->hasDefinition($this->delayedEventsRegistry) && !$container->hasAlias($this->delayedEventsRegistry)) {
@@ -55,19 +66,19 @@ class RegisterListenersPass implements CompilerPassInterface
         foreach ($container->findTaggedServiceIds($this->listenerTag) as $id => $events) {
             $def = $container->getDefinition($id);
             if (!$def->isPublic()) {
-                throw new \InvalidArgumentException(sprintf('The service "%s" must be public as event listeners are lazy-loaded.', $id));
+                throw new InvalidArgumentException(sprintf('The service "%s" must be public as event listeners are lazy-loaded.', $id));
             }
 
             if ($def->isAbstract()) {
-                throw new \InvalidArgumentException(sprintf('The service "%s" must not be abstract as event listeners are lazy-loaded.', $id));
+                throw new InvalidArgumentException(sprintf('The service "%s" must not be abstract as event listeners are lazy-loaded.', $id));
             }
 
             foreach ($events as $event) {
-                $priority = isset($event['priority']) ? $event['priority'] : 0;
-                $delay = isset($event['delay']) ? $event['delay'] : 0;
+                $priority = $event['priority'] ?? 0;
+                $delay = $event['delay'] ?? 0;
 
                 if (!isset($event['event'])) {
-                    throw new \InvalidArgumentException(sprintf('Service "%s" must define the "event" attribute on "%s" tags.', $id, $this->listenerTag));
+                    throw new InvalidArgumentException(sprintf('Service "%s" must define the "event" attribute on "%s" tags.', $id, $this->listenerTag));
                 }
 
                 if (!isset($event['method'])) {

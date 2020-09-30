@@ -6,6 +6,10 @@ use Doctrine\ORM\UnitOfWork;
 use Symfony\Component\Serializer\Normalizer\DenormalizerInterface;
 use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
 
+/**
+ * Class DoctrineORMNormalizer
+ * @package Vivait\DelayedEventBundle\Normalizer
+ */
 class DoctrineORMNormalizer implements NormalizerInterface, DenormalizerInterface
 {
     private $doctrine;
@@ -15,6 +19,12 @@ class DoctrineORMNormalizer implements NormalizerInterface, DenormalizerInterfac
         $this->doctrine = $doctrine;
     }
 
+    /**
+     * @param $data
+     * @param null $format
+     * @param array $context
+     * @return array
+     */
     public function normalize($data, $format = null, array $context = array())
     {
         $class = get_class($data);
@@ -31,11 +41,23 @@ class DoctrineORMNormalizer implements NormalizerInterface, DenormalizerInterfac
         ];
     }
 
+    /**
+     * @param $data
+     * @param $class
+     * @param null $format
+     * @param array $context
+     * @return mixed
+     */
     public function denormalize($data, $class, $format = null, array $context = array())
     {
         return $this->doctrine->getRepository($class)->find($data);
     }
 
+    /**
+     * @param $value
+     * @param null $format
+     * @return bool
+     */
     public function supportsNormalization($value, $format = null)
     {
         if (is_object($value)) {
@@ -50,6 +72,12 @@ class DoctrineORMNormalizer implements NormalizerInterface, DenormalizerInterfac
         return false;
     }
 
+    /**
+     * @param $data
+     * @param $type
+     * @param null $format
+     * @return bool
+     */
     public function supportsDenormalization($data, $type, $format = null)
     {
         return is_array($data) && isset($data[0]) && isset($data[1]) && $this->doctrine->getManagerForClass($type);

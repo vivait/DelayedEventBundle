@@ -2,6 +2,7 @@
 
 namespace Vivait\DelayedEventBundle\Event;
 
+use DateInterval;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\DependencyInjection\Definition;
 use Symfony\Component\EventDispatcher\ContainerAwareEventDispatcher;
@@ -12,6 +13,10 @@ use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Vivait\DelayedEventBundle\IntervalCalculator;
 use Vivait\DelayedEventBundle\Queue\QueueInterface;
 
+/**
+ * Class EventDispatcherMediator
+ * @package Vivait\DelayedEventBundle\Event
+ */
 class EventDispatcherMediator
 {
     /** @var  Definition */
@@ -36,6 +41,13 @@ class EventDispatcherMediator
         $this->delayerId = $delayerId;
     }
 
+    /**
+     * @param $eventName
+     * @param $callback
+     * @param $priority
+     * @param $delay
+     * @throws \Exception
+     */
     public function addListener($eventName, $callback, $priority, $delay) {
         // Register a listener for the trigger
         $this->registerTrigger($eventName);
@@ -70,7 +82,7 @@ class EventDispatcherMediator
      * @param $delay
      * @return string
      */
-    private function generateDelayedEventName($eventName, \DateInterval $delay)
+    private function generateDelayedEventName($eventName, DateInterval $delay)
     {
         // Months & years are ambiguous so lets not convert them
         $delayString = sprintf('PT%sY%sM%sS', $delay->y, $delay->m, $this->convertIntervalToFactors($delay));
@@ -78,7 +90,11 @@ class EventDispatcherMediator
         return sprintf('%s_delayed_by_%s', $eventName, $delayString);
     }
 
-    private function convertIntervalToFactors(\DateInterval $interval) {
+    /**
+     * @param DateInterval $interval
+     * @return float|int
+     */
+    private function convertIntervalToFactors(DateInterval $interval) {
         $days    = $interval->d;
         $hours   = $interval->h + ($days * 24);
         $minutes = $interval->i + ($hours * 60);

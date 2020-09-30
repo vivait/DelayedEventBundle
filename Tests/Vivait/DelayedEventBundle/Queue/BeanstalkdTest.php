@@ -14,6 +14,10 @@ use Vivait\DelayedEventBundle\Queue\Beanstalkd;
 use Vivait\DelayedEventBundle\Serializer\SerializerInterface;
 use function json_encode;
 
+/**
+ * Class BeanstalkdTest
+ * @package Tests\Vivait\DelayedEventBundle\Queue
+ */
 class BeanstalkdTest extends PHPUnit_Framework_TestCase
 {
 
@@ -61,7 +65,7 @@ class BeanstalkdTest extends PHPUnit_Framework_TestCase
             ->expects(self::once())
             ->method('serialize')
             ->with($event)
-            ->will(self::returnValue($serialize))
+            ->willReturn($serialize)
         ;
 
         $this->pheanstalk
@@ -100,7 +104,7 @@ class BeanstalkdTest extends PHPUnit_Framework_TestCase
             ->expects(self::once())
             ->method('serialize')
             ->with($event)
-            ->will(self::returnValue($serialize))
+            ->willReturn($serialize)
         ;
 
         $this->pheanstalk

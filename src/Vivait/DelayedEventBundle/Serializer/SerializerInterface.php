@@ -12,8 +12,16 @@ namespace Vivait\DelayedEventBundle\Serializer;
  */
 interface SerializerInterface
 {
+    /**
+     * @param $event
+     * @return mixed
+     */
     public function serialize($event);
 
+    /**
+     * @param $serializedData
+     * @return mixed
+     */
     public function deserialize($serializedData);
 
 }

@@ -3,20 +3,38 @@ namespace Vivait\DelayedEventBundle\Transformer;
 
 use Doctrine\Common\Persistence\ManagerRegistry;
 use Doctrine\ORM\UnitOfWork;
+use ReflectionProperty;
 
+/**
+ * Class BasicTransformer
+ * @package Vivait\DelayedEventBundle\Transformer
+ */
 class BasicTransformer implements TransformerInterface
 {
+    /**
+     * @param $data
+     * @return mixed
+     */
     public function transform($data)
     {
         return $data;
     }
 
+    /**
+     * @param $data
+     * @return mixed
+     */
     public function reverseTransform($data)
     {
         return $data;
     }
 
-    public function supports(\ReflectionProperty $property, $value)
+    /**
+     * @param ReflectionProperty $property
+     * @param $value
+     * @return bool|mixed
+     */
+    public function supports(ReflectionProperty $property, $value)
     {
         // Support some basic types
         switch (gettype($value)) {
@@ -30,10 +48,6 @@ class BasicTransformer implements TransformerInterface
         }
 
         // Any object that is self-declared as serializable
-        if ($value instanceOf \Serializable) {
-            return true;
-        }
-
-        return false;
+        return $value instanceof \Serializable;
     }
 }

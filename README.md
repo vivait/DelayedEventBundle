@@ -76,12 +76,18 @@ You can create custom transformers by implementing the `TransformerInterface` in
 ```php
 class AcmeTransformer implements TransformerInterface
 {
-    public function supports(\ReflectionProperty $property) {
+    /**
+* @param ReflectionProperty $property
+ * @return bool
+*/public function supports(\ReflectionProperty $property) {
         $property->getValue();
         return is_object($data) && $this->doctrine->contains($data);
     }
 
-    public function serialize($data)
+    /**
+* @param $data
+ * @return array
+*/public function serialize($data)
     {
         // Get the ID
         $id = $this->doctrine->getMetaData($data)->getIdentifierFieldNames();
@@ -98,9 +104,12 @@ class AcmeTransformer implements TransformerInterface
         ];
     }
 
-    public function deserialize($data)
+    /**
+* @param $data
+ * @return mixed
+*/public function deserialize($data)
     {
-        list($class, $id) = $data;
+        [$class, $id] = $data;
         return $this->doctrine->getRepository($class)->find($id);
     }
 }

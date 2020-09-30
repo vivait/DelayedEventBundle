@@ -4,7 +4,13 @@ namespace Vivait\DelayedEventBundle\Transformer;
 use Doctrine\Common\Persistence\ManagerRegistry;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\UnitOfWork;
+use OutOfBoundsException;
+use ReflectionProperty;
 
+/**
+ * Class DoctrineORM
+ * @package Vivait\DelayedEventBundle\Transformer
+ */
 class DoctrineORM implements TransformerInterface
 {
     private $doctrine;
@@ -14,6 +20,10 @@ class DoctrineORM implements TransformerInterface
         $this->doctrine = $doctrine;
     }
 
+    /**
+     * @param $data
+     * @return array|mixed
+     */
     public function transform($data)
     {
         $class = get_class($data);
@@ -30,19 +40,28 @@ class DoctrineORM implements TransformerInterface
         ];
     }
 
+    /**
+     * @param $data
+     * @return mixed
+     */
     public function reverseTransform($data)
     {
-        list($class, $id) = $data;
+        [$class, $id] = $data;
         $result = $this->doctrine->getRepository($class)->find($id);
 
         if ($result === null) {
-            throw new \OutOfBoundsException(sprintf('Could not find "%s" entity with ID "%s"', $class, $id));
+            throw new OutOfBoundsException(sprintf('Could not find "%s" entity with ID "%s"', $class, $id));
         }
 
         return $result;
     }
 
-    public function supports(\ReflectionProperty $property, $value)
+    /**
+     * @param ReflectionProperty $property
+     * @param $value
+     * @return bool|mixed
+     */
+    public function supports(ReflectionProperty $property, $value)
     {
         if (is_object($value)) {
             // Get the entity manager for this entity

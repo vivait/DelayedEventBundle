@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace Vivait\DelayedEventBundle\Event;
 
+/**
+ * Interface PriorityAwareEvent
+ * @package Vivait\DelayedEventBundle\Event
+ */
 interface PriorityAwareEvent
 {
 

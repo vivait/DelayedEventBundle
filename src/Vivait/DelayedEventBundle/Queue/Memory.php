@@ -2,6 +2,7 @@
 
 namespace Vivait\DelayedEventBundle\Queue;
 
+use DateInterval;
 use Vivait\DelayedEventBundle\IntervalCalculator;
 use Vivait\DelayedEventBundle\Serializer\SerializerInterface;
 
@@ -12,12 +13,23 @@ class Memory implements QueueInterface
 {
     private $jobs = [];
 
-    public function put($eventName, $event, \DateInterval $delay = null, $currentAttempt = 1)
+    /**
+     * @param $eventName
+     * @param $event
+     * @param DateInterval|null $delay
+     * @param int $currentAttempt
+     * @return mixed|void
+     */
+    public function put($eventName, $event, DateInterval $delay = null, $currentAttempt = 1)
     {
         $seconds = time() - IntervalCalculator::convertDateIntervalToSeconds($delay);
         $this->jobs[$seconds][] = new Job(uniqid(), $eventName, $event);
     }
 
+    /**
+     * @param null $wait_timeout
+     * @return Job|null
+     */
     public function get($wait_timeout = null)
     {
         $currentTime = key($this->jobs);
@@ -33,14 +45,17 @@ class Memory implements QueueInterface
             if ($wait_timeout !== null && $wait_timeout < $timeLeft) {
                 return null;
             }
-            else {
-                sleep($timeLeft);
-            }
+
+            sleep($timeLeft);
         }
 
         return array_shift($this->jobs[$currentTime]);
     }
 
+    /**
+     * @param Job $job
+     * @return mixed|void
+     */
     public function delete(Job $job)
     {
         foreach ($this->jobs as $delay => $jobs) {
@@ -50,6 +65,10 @@ class Memory implements QueueInterface
         }
     }
 
+    /**
+     * @param Job $job
+     * @return mixed|void
+     */
     public function bury(Job $job)
     {
         foreach ($this->jobs as $delay => $jobs) {
@@ -62,6 +81,7 @@ class Memory implements QueueInterface
     }
 
     /**
+     * @param bool $pending
      * @return boolean
      */
     public function hasWaiting($pending = false)

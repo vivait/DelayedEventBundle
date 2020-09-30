@@ -2,13 +2,19 @@
 
 namespace Vivait\DelayedEventBundle\Queue;
 
+use DateInterval;
 use PhpAmqpLib\Channel\AMQPChannel;
 use PhpAmqpLib\Connection\AMQPStreamConnection;
 use PhpAmqpLib\Message\AMQPMessage;
 use PhpAmqpLib\Wire\GenericContent;
+use RuntimeException;
 use Vivait\DelayedEventBundle\IntervalCalculator;
 use Vivait\DelayedEventBundle\Serializer\SerializerInterface;
 
+/**
+ * Class RabbitMQ
+ * @package Vivait\DelayedEventBundle\Queue
+ */
 class RabbitMQ implements QueueInterface
 {
     protected $queue_name;
@@ -25,7 +31,7 @@ class RabbitMQ implements QueueInterface
 
     /**
      * @param SerializerInterface $serializer
-     * @param \Pheanstalk_PheanstalkInterface $beanstalk
+     * @param AMQPStreamConnection $connection
      * @param string $queue_name
      */
     public function __construct(SerializerInterface $serializer, AMQPStreamConnection $connection, $queue_name = 'delayed_events')
@@ -37,7 +43,14 @@ class RabbitMQ implements QueueInterface
         $this->channel->queue_declare($queue_name, false, true, false, false);
     }
 
-    public function put($eventName, $event, \DateInterval $delay = null, $currentAttempt = 1)
+    /**
+     * @param $eventName
+     * @param $event
+     * @param DateInterval|null $delay
+     * @param int $currentAttempt
+     * @return mixed|void
+     */
+    public function put($eventName, $event, DateInterval $delay = null, $currentAttempt = 1)
     {
         $job = $this->serializer->serialize($event);
 
@@ -54,7 +67,11 @@ class RabbitMQ implements QueueInterface
         $this->channel->basic_publish($message, '', $this->queue_name);
     }
 
-    public function get()
+    /**
+     * @param null $wait_timeout
+     * @return Job|null
+     */
+    public function get($wait_timeout = null)
     {
         $job = null;
 
@@ -77,12 +94,16 @@ class RabbitMQ implements QueueInterface
 //        }
 
         if (!($job instanceOf Job)) {
-            throw new \RuntimeException('RabbitMQ callback did not produce job');
+            throw new RuntimeException('RabbitMQ callback did not produce job');
         }
 
         return $job;
     }
 
+    /**
+     * @param Job $job
+     * @return mixed|void
+     */
     public function delete(Job $job)
     {
         $this->channel->basic_ack($job->getId());

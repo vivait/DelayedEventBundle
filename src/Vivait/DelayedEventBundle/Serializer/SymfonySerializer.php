@@ -11,6 +11,10 @@ use Symfony\Component\Serializer\Serializer;
 use Symfony\Component\Serializer\Tests\Normalizer\PropertyNormalizerTest;
 use Vivait\DelayedEventBundle\Transformer\TransformerInterface;
 
+/**
+ * Class SymfonySerializer
+ * @package Vivait\DelayedEventBundle\Serializer
+ */
 class SymfonySerializer implements SerializerInterface
 {
     /**
@@ -24,11 +28,19 @@ class SymfonySerializer implements SerializerInterface
         $this->serializer = new Serializer($normalizers, $encoders);
     }
 
+    /**
+     * @param $event
+     * @return mixed
+     */
     public function serialize($event)
     {
         return $this->serializer->serialize($event, 'json');
     }
 
+    /**
+     * @param $serializedData
+     * @return mixed
+     */
     public function deserialize($serializedData)
     {
         return $this->serializer->deserialize($serializedData, 'Symfony\Component\EventDispatcher\Event', 'json');

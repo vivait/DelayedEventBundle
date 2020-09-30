@@ -2,6 +2,8 @@
 
 namespace Tests\Vivait\DelayedEventBundle;
 
+use PHPUnit_Framework_Assert;
+use PHPUnit_Framework_TestCase;
 use Symfony\Bundle\FrameworkBundle\Console\Application;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Output\BufferedOutput;
@@ -16,7 +18,7 @@ use Vivait\DelayedEventBundle\EventDispatcher\DelayedEventDispatcher;
 /**
  * Checks that an end-to-end delayed event works
  */
-class EndToEndTest extends \PHPUnit_Framework_TestCase
+class EndToEndTest extends PHPUnit_Framework_TestCase
 {
     
     /**
@@ -69,22 +71,22 @@ class EndToEndTest extends \PHPUnit_Framework_TestCase
     {
         $this->getDispatcher()->dispatch('test.event', new Event());
 
-        \PHPUnit_Framework_Assert::assertFalse(TestListener::$hasRan);
+        PHPUnit_Framework_Assert::assertFalse(TestListener::$hasRan);
 
         $bufferedOutput = new BufferedOutput();
 
         $options = array('command' => 'vivait:delayed_event:worker', '-t' => 2, '--run-once' => true, '-v' => true);
         $this->application->run(new ArrayInput($options), $bufferedOutput);
 
-        \PHPUnit_Framework_Assert::assertContains('Performing job', $bufferedOutput->fetch());
-        \PHPUnit_Framework_Assert::assertTrue(TestListener::$hasRan);
+        PHPUnit_Framework_Assert::assertContains('Performing job', $bufferedOutput->fetch());
+        PHPUnit_Framework_Assert::assertTrue(TestListener::$hasRan);
     }
 
     public function testThatAJobWillBeBuriedIfItDoesNotSucceedAfterAllRetriesAreUsed()
     {
         $this->getDispatcher()->dispatch('test.event.exception', new Event());
 
-        \PHPUnit_Framework_Assert::assertEquals(0, TestExceptionListener::$attempt);
+        PHPUnit_Framework_Assert::assertEquals(0, TestExceptionListener::$attempt);
 
         $bufferedOutput = new BufferedOutput();
 
@@ -100,26 +102,26 @@ class EndToEndTest extends \PHPUnit_Framework_TestCase
         
         $output = $bufferedOutput->fetch();
         
-        \PHPUnit_Framework_Assert::assertContains(
+        PHPUnit_Framework_Assert::assertContains(
             'Failed to perform event, attempt number 0 with exception: ',
             $output
         );
-        \PHPUnit_Framework_Assert::assertContains(
+        PHPUnit_Framework_Assert::assertContains(
             'Failed to perform event, attempt number 1 with exception: ',
             $output
         );
-        \PHPUnit_Framework_Assert::assertContains(
+        PHPUnit_Framework_Assert::assertContains(
             'Failed to perform event, attempt number 2 with exception: ',
             $output
         );
-        \PHPUnit_Framework_Assert::assertContains('Burying job', $output);
+        PHPUnit_Framework_Assert::assertContains('Burying job', $output);
     }
 
     public function testThatAJobWillSucceedCorrectlyDuringRetries()
     {
         $this->getDispatcher()->dispatch('test.event.exception', new Event());
 
-        \PHPUnit_Framework_Assert::assertEquals(0, TestExceptionListener::$attempt);
+        PHPUnit_Framework_Assert::assertEquals(0, TestExceptionListener::$attempt);
 
         $bufferedOutput = new BufferedOutput();
 
@@ -134,15 +136,15 @@ class EndToEndTest extends \PHPUnit_Framework_TestCase
         $this->application->run(new ArrayInput($options), $bufferedOutput);
 
         $output = $bufferedOutput->fetch();
-        \PHPUnit_Framework_Assert::assertContains('Job finished successfully and removed', $output);
-        \PHPUnit_Framework_Assert::assertTrue(TestExceptionListener::$succeeded);
+        PHPUnit_Framework_Assert::assertContains('Job finished successfully and removed', $output);
+        PHPUnit_Framework_Assert::assertTrue(TestExceptionListener::$succeeded);
     }
 
     public function testThatNoRetriesWillOccurIfTheRetryOptionWasNotSet()
     {
         $this->getDispatcher()->dispatch('test.event.exception', new Event());
 
-        \PHPUnit_Framework_Assert::assertEquals(0, TestExceptionListener::$attempt);
+        PHPUnit_Framework_Assert::assertEquals(0, TestExceptionListener::$attempt);
 
         $bufferedOutput = new BufferedOutput();
 
@@ -157,10 +159,10 @@ class EndToEndTest extends \PHPUnit_Framework_TestCase
 
         $output = $bufferedOutput->fetch();
 
-        \PHPUnit_Framework_Assert::assertContains(
+        PHPUnit_Framework_Assert::assertContains(
             'Failed to perform event, attempt number 0 with exception: ',
             $output
         );
-        \PHPUnit_Framework_Assert::assertContains('Burying job', $output);
+        PHPUnit_Framework_Assert::assertContains('Burying job', $output);
     }
 }

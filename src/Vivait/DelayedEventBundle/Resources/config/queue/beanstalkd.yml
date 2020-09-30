@@ -7,7 +7,10 @@ services:
 
   vivait_delayed_event.queue.beanstalk:
     class: Vivait\DelayedEventBundle\Queue\Beanstalkd
+    tags:
+        - { name: monolog.logger, channel: worker }
     arguments:
+      - "@logger"
       - "@vivait_delayed_event.serializer"
       - "@leezy.pheanstalk"
       - '%vivait_delayed_event.queue.configuration.tube%'

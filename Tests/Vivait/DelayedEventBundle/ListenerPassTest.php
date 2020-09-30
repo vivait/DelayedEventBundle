@@ -2,6 +2,8 @@
 
 namespace Tests\Vivait\DelayedEventBundle;
 
+use PHPUnit_Framework_Assert;
+use PHPUnit_Framework_TestCase;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
 use Symfony\Component\DependencyInjection\Reference;
@@ -10,11 +12,12 @@ use Vivait\DelayedEventBundle\DependencyInjection\RegisterListenersPass;
 use Vivait\DelayedEventBundle\DependencyInjection\VivaitDelayedEventExtension;
 use Vivait\DelayedEventBundle\EventDispatcher\DelayedEventDispatcher;
 use Vivait\DelayedEventBundle\Registry\DelayedEventsRegistry;
+use Tests\Vivait\DelayedEventBundle\Mocks\TestSubscriber;
 
 /**
  * Checks that the listener pass will take the tags from the container builder and register the listeners/subscribers
  */
-class ListenerPassTest extends \PHPUnit_Framework_TestCase
+class ListenerPassTest extends PHPUnit_Framework_TestCase
 {
     /**
      * @var ContainerBuilder
@@ -42,7 +45,7 @@ class ListenerPassTest extends \PHPUnit_Framework_TestCase
         return $this->container->get('vivait_delayed_event.registry');
     }
 
-    function setUp() {
+    public function setUp() {
         $this->container = new ContainerBuilder();
         $this->listenerPass = new RegisterListenersPass();
 
@@ -79,7 +82,7 @@ class ListenerPassTest extends \PHPUnit_Framework_TestCase
         $this->listenerPass->process($this->container);
 
         $dispatcher = $this->getDispatcher();
-        \PHPUnit_Framework_Assert::assertCount(1, $dispatcher->getListeners('test.event'));
+        PHPUnit_Framework_Assert::assertCount(1, $dispatcher->getListeners('test.event'));
     }
 
     public function testDuplicateDates()
@@ -108,7 +111,7 @@ class ListenerPassTest extends \PHPUnit_Framework_TestCase
         $this->listenerPass->process($this->container);
 
         $registry = $this->getDelayRegistry();
-        \PHPUnit_Framework_Assert::assertCount(2, $registry->getDelays('test.event'));
+        PHPUnit_Framework_Assert::assertCount(2, $registry->getDelays('test.event'));
     }
 
     public function testListenerWithoutMethod()
@@ -127,7 +130,7 @@ class ListenerPassTest extends \PHPUnit_Framework_TestCase
         $listener = $dispatcher->getListeners($delayedEventName);
 
         // Check it auto-generated the listener method
-        \PHPUnit_Framework_Assert::assertSame('onTestEvent', $listener[0][1]);
+        PHPUnit_Framework_Assert::assertSame('onTestEvent', $listener[0][1]);
     }
 
     public function testListenerWithPriority()
@@ -155,8 +158,8 @@ class ListenerPassTest extends \PHPUnit_Framework_TestCase
         $listener = $dispatcher->getListeners($delayedEventName);
 
         // Check the high priority event listener is first
-        \PHPUnit_Framework_Assert::assertCount(2, $listener);
-        \PHPUnit_Framework_Assert::assertSame('onHighPriorityEvent', $listener[0][1]);
+        PHPUnit_Framework_Assert::assertCount(2, $listener);
+        PHPUnit_Framework_Assert::assertSame('onHighPriorityEvent', $listener[0][1]);
     }
 
     public function testSubscriber()
@@ -165,7 +168,7 @@ class ListenerPassTest extends \PHPUnit_Framework_TestCase
             'Subscriber support has not been implemented yet.'
         );
 
-        $class = 'Tests\Vivait\DelayedEventBundle\Mocks\TestSubscriber';
+        $class = TestSubscriber::class;
         $id = 'test_subscriber';
 
         $this->container->register($id, $class)
@@ -182,8 +185,8 @@ class ListenerPassTest extends \PHPUnit_Framework_TestCase
 
         $dispatcher = $this->getDispatcher();
 
-        \PHPUnit_Framework_Assert::assertCount(2, $dispatcher->getListeners($delayedEventName1));
-        \PHPUnit_Framework_Assert::assertCount(1, $dispatcher->getListeners($delayedEventName2));
+        PHPUnit_Framework_Assert::assertCount(2, $dispatcher->getListeners($delayedEventName1));
+        PHPUnit_Framework_Assert::assertCount(1, $dispatcher->getListeners($delayedEventName2));
     }
 
     /**

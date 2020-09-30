@@ -4,6 +4,10 @@ namespace Vivait\DelayedEventBundle\Queue;
 
 use Symfony\Component\EventDispatcher\Event;
 
+/**
+ * Class Job
+ * @package Vivait\DelayedEventBundle\Queue
+ */
 class Job implements JobInterface
 {
     /**
@@ -29,15 +33,23 @@ class Job implements JobInterface
     /**
      * @var int
      */
-    private $maxRetries;
+    private $maxAttempts;
 
-    public function __construct($id, $eventName, $event, $maxRetries = 1, $attempts = 1)
+    /**
+     * Job constructor.
+     * @param $id
+     * @param $eventName
+     * @param $event
+     * @param int $maxAttempts
+     * @param int $attempts
+     */
+    public function __construct($id, $eventName, $event, $maxAttempts = 1, $attempts = 1)
     {
         $this->eventName = $eventName;
         $this->event = $event;
         $this->id = $id;
         $this->attempts = $attempts;
-        $this->maxRetries = $maxRetries;
+        $this->maxAttempts = $maxAttempts;
     }
 
     /**
@@ -78,8 +90,8 @@ class Job implements JobInterface
     /**
      * @return int
      */
-    public function getMaxRetries()
+    public function getMaxAttempts()
     {
-        return $this->maxRetries;
+        return $this->maxAttempts;
     }
 }

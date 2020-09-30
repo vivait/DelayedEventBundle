@@ -8,8 +8,15 @@ use Symfony\Component\HttpKernel\Bundle\Bundle;
 use Vivait\DelayedEventBundle\DependencyInjection\RegisterListenersPass;
 use Vivait\DelayedEventBundle\DependencyInjection\RegisterNormalizersPass;
 
+/**
+ * Class VivaitDelayedEventBundle
+ * @package Vivait\DelayedEventBundle
+ */
 class VivaitDelayedEventBundle extends Bundle
 {
+    /**
+     * @param ContainerBuilder $container
+     */
     public function build(ContainerBuilder $container)
     {
         parent::build($container);
