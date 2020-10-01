@@ -533,7 +533,7 @@ class JobDispatcherCommand extends EndlessContainerAwareCommand
             $processCommand[] = '--no-debug';
         }
 
-        $process = new Process($processCommand);
+        $process = new Process(implode(' ', $processCommand));
         $process->setIdleTimeout($ttr);
         $process->setTimeout($ttr);
 
