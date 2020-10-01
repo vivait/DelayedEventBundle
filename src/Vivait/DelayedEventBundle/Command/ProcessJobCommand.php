@@ -92,14 +92,14 @@ class ProcessJobCommand extends ContainerAwareCommand
 
         $event = base64_decode($encodedEvent);
         if ($event === false) {
-            $this->logger->error('Could not decode event: ' . $encodedEvent);
+            $this->logger->critical("Job [{$jobId}] couldn't be decoded: " . $encodedEvent);
 
             return self::JOB_HARD_FAIL;
         }
         try {
             $event = $this->serializer->deserialize($event);
         } catch (FailedTransformationException $e) {
-            $this->logger->error('Could not deserialize event: ' . $event);
+            $this->logger->critical("Job [{$jobId}] couldn't be deserialized: " . $event);
 
             return self::JOB_HARD_FAIL;
         }
@@ -134,7 +134,6 @@ class ProcessJobCommand extends ContainerAwareCommand
 
             return self::JOB_SOFT_FAIL;
         }
-        $this->logger->info("Job [{$jobId}] completed successfully");
 
         return self::JOB_SUCCESS;
     }
