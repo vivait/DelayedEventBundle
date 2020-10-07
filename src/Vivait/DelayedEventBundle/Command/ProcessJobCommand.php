@@ -10,6 +10,7 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\HttpKernel\KernelInterface;
+use Vivait\DelayedEventBundle\Exception\TerminalEventException;
 use Vivait\DelayedEventBundle\Serializer\Exception\FailedTransformationException;
 use Vivait\DelayedEventBundle\Serializer\Serializer;
 
@@ -122,6 +123,20 @@ class ProcessJobCommand extends ContainerAwareCommand
     {
         try {
             $this->eventDispatcher->dispatch($eventName, $event);
+        } catch (TerminalEventException $exception) {
+            // Unwrap inner exception that caused the terminal exception
+            $exception = $exception->getPrevious();
+
+            $this->logger->error(
+                "Job [{$jobId}] threw a terminal exception: " . $exception->getMessage(),
+                [
+                    'jobId' => $jobId,
+                    'exception' => $exception->getMessage(),
+                    'stackTrace' => $exception->getTrace()
+                ]
+            );
+
+            return self::JOB_HARD_FAIL;
         } catch (Exception $exception) {
             $this->logger->error(
                 "Job [{$jobId}] threw an exception: " . $exception->getMessage(),
