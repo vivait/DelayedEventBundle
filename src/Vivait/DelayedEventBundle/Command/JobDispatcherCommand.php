@@ -257,6 +257,9 @@ class JobDispatcherCommand extends EndlessContainerAwareCommand
                     ]
                 );
 
+                $output->write('X');
+
+
                 return;
             }
 
@@ -284,6 +287,9 @@ class JobDispatcherCommand extends EndlessContainerAwareCommand
                         'ttr' => $ttr
                     ]
                 );
+
+                $output->write('X');
+
 
                 return;
             }
@@ -339,6 +345,8 @@ class JobDispatcherCommand extends EndlessContainerAwareCommand
                     ]
                 );
 
+                $output->write('x');
+
                 return;
             }
         } catch (Throwable $e) {
@@ -364,6 +372,8 @@ class JobDispatcherCommand extends EndlessContainerAwareCommand
             // bury the job as re-trying likely won't get us anywhere
             $this->queue->bury($job);
 
+            $output->write('E');
+
             return;
         }
 
@@ -386,6 +396,8 @@ class JobDispatcherCommand extends EndlessContainerAwareCommand
                 'ttr' => $ttr
             ]
         );
+
+        $output->write('.');
 
         $this->queue->delete($job);
     }
