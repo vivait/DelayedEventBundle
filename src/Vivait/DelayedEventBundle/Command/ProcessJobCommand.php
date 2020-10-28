@@ -93,14 +93,28 @@ class ProcessJobCommand extends ContainerAwareCommand
 
         $event = base64_decode($encodedEvent);
         if ($event === false) {
-            $this->logger->critical("Job [{$jobId}] couldn't be decoded: " . $encodedEvent);
+            $this->logger->critical(
+                "Event couldn't be decoded",
+                [
+                    'jobId' => $jobId,
+                    'encodedEvent' => $encodedEvent
+                ]
+            );
 
             return self::JOB_HARD_FAIL;
         }
         try {
             $event = $this->serializer->deserialize($event);
-        } catch (FailedTransformationException $e) {
-            $this->logger->critical("Job [{$jobId}] couldn't be deserialized: " . $event);
+        } catch (\Throwable $exception) {
+            $this->logger->critical(
+                "Event couldn't be deserialized",
+                [
+                    'jobId' => $jobId,
+                    'decodedEvent' => $event,
+                    'exception' => $exception->getMessage(),
+                    'stackTrace' => $exception->getTrace()
+                ]
+            );
 
             return self::JOB_HARD_FAIL;
         }
@@ -128,7 +142,7 @@ class ProcessJobCommand extends ContainerAwareCommand
             $exception = $exception->getPrevious();
 
             $this->logger->error(
-                "Job [{$jobId}] threw a terminal exception: " . $exception->getMessage(),
+                'Job threw a terminal exception' ,
                 [
                     'jobId' => $jobId,
                     'exception' => $exception->getMessage(),
@@ -137,9 +151,9 @@ class ProcessJobCommand extends ContainerAwareCommand
             );
 
             return self::JOB_HARD_FAIL;
-        } catch (Exception $exception) {
+        } catch (\Throwable $exception) {
             $this->logger->error(
-                "Job [{$jobId}] threw an exception: " . $exception->getMessage(),
+                'Job threw an exception',
                 [
                     'jobId' => $jobId,
                     'exception' => $exception->getMessage(),
