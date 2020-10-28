@@ -11,7 +11,6 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\HttpKernel\KernelInterface;
 use Vivait\DelayedEventBundle\Exception\TerminalEventException;
-use Vivait\DelayedEventBundle\Serializer\Exception\FailedTransformationException;
 use Vivait\DelayedEventBundle\Serializer\Serializer;
 
 /**
