@@ -11,6 +11,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\HttpKernel\KernelInterface;
 use Vivait\DelayedEventBundle\Exception\TerminalEventException;
+use Vivait\DelayedEventBundle\Exception\TransientEventException;
 use Vivait\DelayedEventBundle\Serializer\Serializer;
 
 /**
@@ -141,7 +142,7 @@ class ProcessJobCommand extends ContainerAwareCommand
             $exception = $exception->getPrevious();
 
             $this->logger->error(
-                'Job threw a terminal exception' ,
+                'Job threw a terminal exception',
                 [
                     'jobId' => $jobId,
                     'exception' => $exception->getMessage(),
@@ -150,9 +151,23 @@ class ProcessJobCommand extends ContainerAwareCommand
             );
 
             return self::JOB_HARD_FAIL;
+        } catch (TransientEventException $exception) {
+            // Unwrap inner exception that caused the transient exception
+            $exception = $exception->getPrevious();
+
+            $this->logger->warning(
+                'Job threw a transient exception',
+                [
+                    'jobId' => $jobId,
+                    'exception' => $exception->getMessage(),
+                    'stackTrace' => $exception->getTrace()
+                ]
+            );
+
+            return self::JOB_SOFT_FAIL;
         } catch (\Throwable $exception) {
             $this->logger->error(
-                'Job threw an exception',
+                'Job threw an unhandled exception',
                 [
                     'jobId' => $jobId,
                     'exception' => $exception->getMessage(),
