@@ -192,7 +192,7 @@ class JobDispatcherCommand extends EndlessContainerAwareCommand
         }
 
         $this->jobsProcessed++;
-        
+
         $payload = $this->getPayload($job);
         $tenant = $this->getTenantFromTubeName($payload['tube']);
         $currentAttempt = $payload['currentAttempt'] ?? 1;
@@ -352,7 +352,7 @@ class JobDispatcherCommand extends EndlessContainerAwareCommand
         } catch (Throwable $e) {
             $this->logger->error(
                 sprintf(
-                    "Job [%s] has thrown an Exception and will be buried: {$e->getMessage()}",
+                    "Job [%s] has thrown an Exception and will be buried: {$e->getMessage()}, {$e->getTraceAsString()}",
                     $jobId
                 ),
                 [
@@ -509,6 +509,24 @@ class JobDispatcherCommand extends EndlessContainerAwareCommand
         return json_decode($job->getData(), true);
     }
 
+
+    private function getSymfonyConsole(): string
+    {
+        // 2.x
+        $sfConsole = realpath($this->kernel->getRootDir() . '/console');
+        if($sfConsole) {
+            return $sfConsole;
+        }
+
+        // 3.x
+        $sfConsole = realpath($this->kernel->getRootDir() . '/../bin/console');
+        if($sfConsole) {
+            return $sfConsole;
+        }
+
+        throw new \RuntimeException('Could not find the Symfony console');
+    }
+
     /**
      * Calls the vivait:worker:process_job command for the given environment to process a job in their tube.
      *
@@ -533,7 +551,7 @@ class JobDispatcherCommand extends EndlessContainerAwareCommand
         $encodedEvent = base64_encode($encodedSerializedEvent);
         $processCommand = [
             'php',
-            $this->kernel->getRootDir() . '/console',
+            $this->getSymfonyConsole(),
             'vivait:worker:process_job',
             $eventName,
             $encodedEvent,
