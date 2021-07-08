@@ -5,11 +5,14 @@ declare(strict_types=1);
 namespace Tests\Vivait\DelayedEventBundle\Queue;
 
 use DateInterval;
+use DateTimeImmutable;
 use Pheanstalk\PheanstalkInterface;
 use PHPUnit_Framework_MockObject_MockObject;
 use PHPUnit_Framework_TestCase;
+use Psr\Log\LoggerInterface;
 use Symfony\Component\EventDispatcher\Event;
 use Vivait\DelayedEventBundle\Event\PriorityAwareEvent;
+use Vivait\DelayedEventBundle\Event\SelfDelayingEvent;
 use Vivait\DelayedEventBundle\Queue\Beanstalkd;
 use Vivait\DelayedEventBundle\Serializer\SerializerInterface;
 use function json_encode;
@@ -36,8 +39,18 @@ class BeanstalkdTest extends PHPUnit_Framework_TestCase
      */
     private $serializer;
 
+    /**
+     * @var PHPUnit_Framework_MockObject_MockObject|LoggerInterface
+     */
+    private $logger;
+
     protected function setUp(): void
     {
+        $this->logger = $this
+            ->getMockBuilder(LoggerInterface::class)
+            ->getMock()
+        ;
+
         $this->serializer = $this
             ->getMockBuilder(SerializerInterface::class)
             ->getMock()
@@ -48,7 +61,7 @@ class BeanstalkdTest extends PHPUnit_Framework_TestCase
             ->getMock()
         ;
 
-        $this->queue = new Beanstalkd($this->serializer, $this->pheanstalk);
+        $this->queue = new Beanstalkd($this->logger, $this->serializer, $this->pheanstalk);
     }
 
     /**
@@ -129,6 +142,39 @@ class BeanstalkdTest extends PHPUnit_Framework_TestCase
         $this->queue->put($eventName, $event, new DateInterval('P2Y4DT6H8M'));
     }
 
+    /**
+     * @test
+     */
+    public function itWillSetTheDelayOfASelfDelayingEvent(): void
+    {
+        $eventName = 'eventName';
+        $now = new DateTimeImmutable();
+        $event = $this->createSelfDelayingEvent($now->add(new DateInterval('PT500S')));
+
+        $serialize = json_encode(['serialize']);
+
+        $this->serializer
+            ->expects(self::once())
+            ->method('serialize')
+            ->with($event)
+            ->willReturn($serialize)
+        ;
+
+        $this->pheanstalk
+            ->expects(self::once())
+            ->method('putInTube')
+            ->with(
+                'delayed_events',
+                $this->anything(),
+                1234,
+                500
+            )
+        ;
+
+        $this->queue->put($eventName, $event, new DateInterval('P2Y4DT6H8M'));
+    }
+
+
     private function createEvent(int $priority): Event
     {
         return new class($priority) extends Event implements PriorityAwareEvent
@@ -147,6 +193,33 @@ class BeanstalkdTest extends PHPUnit_Framework_TestCase
             public function getPriority(): int
             {
                 return $this->priority;
+            }
+        };
+    }
+
+    private function createSelfDelayingEvent(DateTimeImmutable $eventDateTime): Event
+    {
+        return new class($eventDateTime) extends Event implements SelfDelayingEvent, PriorityAwareEvent
+        {
+
+            /**
+             * @var DateTimeImmutable
+             */
+            private $eventDateTime;
+
+            public function __construct(DateTimeImmutable $eventDateTime)
+            {
+                $this->eventDateTime = $eventDateTime;
+            }
+
+            public function getDelayedEventDateTime(): DateTimeImmutable
+            {
+                return $this->eventDateTime;
+            }
+
+            public function getPriority(): int
+            {
+                return 1234;
             }
         };
     }

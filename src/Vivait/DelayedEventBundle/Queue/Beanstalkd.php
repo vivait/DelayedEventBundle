@@ -3,11 +3,13 @@
 namespace Vivait\DelayedEventBundle\Queue;
 
 use DateInterval;
+use DateTimeImmutable;
 use Pheanstalk\PheanstalkInterface;
 use Psr\Log\LoggerInterface;
 use Ramsey\Uuid\Uuid;
 use Vivait\DelayedEventBundle\Event\PriorityAwareEvent;
 use Vivait\DelayedEventBundle\Event\RetryableEvent;
+use Vivait\DelayedEventBundle\Event\SelfDelayingEvent;
 use Vivait\DelayedEventBundle\IntervalCalculator;
 use Vivait\DelayedEventBundle\Queue\Exception\JobException;
 use Vivait\DelayedEventBundle\Serializer\Exception\SerializerException;
@@ -77,6 +79,18 @@ class Beanstalkd implements QueueInterface
 
         if ($event instanceof PriorityAwareEvent) {
             $priority = $event->getPriority();
+        }
+
+        if ($event instanceof SelfDelayingEvent) {
+            $now = new DateTimeImmutable();
+            $eventDateTime = $event->getDelayedEventDateTime();
+            $diff = $now->diff($eventDateTime);
+
+            if ($diff === false || $eventDateTime < $now) {
+                $delay = new DateInterval('P0D');
+            } else {
+                $delay = $diff;
+            }
         }
 
         // Note: We make a delay of at least a second to give doctrine change to commit any transactions
