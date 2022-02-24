@@ -236,8 +236,6 @@ class JobDispatcherCommand extends EndlessContainerAwareCommand
              * If the command hard fails, then just bury the job as it shouldn't be retried
              */
             if ($return === ProcessJobCommand::JOB_HARD_FAIL) {
-                $this->queue->bury($job);
-
                 $this->logger->error(
                     sprintf(
                         'Job [%s] has hard-failed and will be buried',
@@ -257,9 +255,8 @@ class JobDispatcherCommand extends EndlessContainerAwareCommand
                     ]
                 );
 
+                $this->bury($job);
                 $output->write('X');
-
-
                 return;
             }
 
@@ -267,8 +264,6 @@ class JobDispatcherCommand extends EndlessContainerAwareCommand
              * If the command soft fails but it is the last attempt, then just bury the job as it shouldn't be retried
              */
             if ($return === ProcessJobCommand::JOB_SOFT_FAIL && $currentAttempt >= $maxAttempts) {
-                $this->queue->bury($job);
-
                 $this->logger->error(
                     sprintf(
                         'Job [%s] has soft-failed but has reached the last attempt and will be buried',
@@ -287,10 +282,8 @@ class JobDispatcherCommand extends EndlessContainerAwareCommand
                         'ttr' => $ttr
                     ]
                 );
-
+                $this->bury($job);
                 $output->write('X');
-
-
                 return;
             }
 
@@ -370,10 +363,8 @@ class JobDispatcherCommand extends EndlessContainerAwareCommand
 
             // If we catch any other exceptions that we can't handle,
             // bury the job as re-trying likely won't get us anywhere
-            $this->queue->bury($job);
-
+            $this->bury($job);
             $output->write('E');
-
             return;
         }
 
@@ -564,8 +555,17 @@ class JobDispatcherCommand extends EndlessContainerAwareCommand
         }
 
         $process = new Process(implode(' ', $processCommand));
-        $process->setIdleTimeout($ttr);
-        $process->setTimeout($ttr);
+
+        /**
+         * TTR is the time in which the job will become visible to other workers. This can cause duplicate processing
+         * if the job is not 'handled' within that time (buried, deleted, etc)
+         *
+         * The actual allowed execution time of the process shall be limited to 90% of the TTR to help it be buried
+         * gracefully
+         */
+        $allowedExecutionTime = round($ttr * 0.9);
+        $process->setIdleTimeout($allowedExecutionTime);
+        $process->setTimeout($allowedExecutionTime);
 
         try {
             return $process->run();
@@ -594,5 +594,23 @@ class JobDispatcherCommand extends EndlessContainerAwareCommand
         }
 
         return $optionTenants;
+    }
+
+    /**
+     * @param Job $job
+     * @return void
+     */
+    private function bury(Job $job): void
+    {
+        try {
+            $this->queue->bury($job);
+        } catch (Throwable $exception) {
+            $this->logger->critical(
+                sprintf(
+                    "Job couldn't be buried because: %s",
+                    $exception->getMessage()
+                )
+            );
+        }
     }
 }
