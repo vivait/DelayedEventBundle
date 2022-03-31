@@ -4,11 +4,9 @@ namespace Vivait\DelayedEventBundle\Command;
 
 use Exception;
 use InvalidArgumentException;
-use Leezy\PheanstalkBundle\Proxy\PheanstalkProxy;
+use Pheanstalk\Contract\PheanstalkInterface;
 use Pheanstalk\Job;
-use Pheanstalk\PheanstalkInterface;
 use Psr\Log\LoggerInterface;
-use Symfony\Bridge\Monolog\Handler\ConsoleHandler;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -16,7 +14,6 @@ use Symfony\Component\HttpKernel\KernelInterface;
 use Symfony\Component\Process\Process;
 use Throwable;
 use Vivait\Backoff\Strategies\AbstractBackoffStrategy;
-use Vivait\TenantBundle\Model\Tenant;
 use Wrep\Daemonizable\Command\EndlessContainerAwareCommand;
 
 use function is_numeric;
@@ -43,47 +40,24 @@ class JobDispatcherCommand extends EndlessContainerAwareCommand
     public const DEFAULT_TIMEOUT = 0.1;
 
     /**
-     * The prefix added to tenants to find their environment
-     */
-    public const TENANT_ENVIRONMENT_PREFIX = 'tenant_';
-
-    /**
      * How many jobs we should process before this worker dispatcher restarts (and is then restarted by upstart)
      */
     public const JOBS_BEFORE_EXIT = 1000;
 
-    /**
-     * @var PheanstalkProxy
-     */
-    private $queue;
+    private PheanstalkInterface $queue;
 
-    /**
-     * @var KernelInterface
-     */
-    private $kernel;
+    private KernelInterface $kernel;
 
-    /**
-     * @var LoggerInterface
-     */
-    private $logger;
+    private LoggerInterface $logger;
 
-    /**
-     * @var AbstractBackoffStrategy
-     */
-    private $backoffStrategy;
+    private AbstractBackoffStrategy $backoffStrategy;
 
-    /**
-     * @var int
-     */
-    private $jobsProcessed = 0;
+    private int $jobsProcessed = 0;
 
-    /**
-     * @var float
-     */
-    private $processStartedTime = 0.0;
+    private float $processStartedTime = 0.0;
 
     public function __construct(
-        PheanstalkProxy $queue,
+        PheanstalkInterface $queue,
         KernelInterface $kernel,
         LoggerInterface $logger,
         AbstractBackoffStrategy $backoffStrategy
@@ -113,12 +87,6 @@ class JobDispatcherCommand extends EndlessContainerAwareCommand
                 self::DEFAULT_WAIT_TIMEOUT
             )
             ->addOption(
-                'environmentList',
-                null,
-                InputOption::VALUE_OPTIONAL | InputOption::VALUE_IS_ARRAY,
-                'CSV of environments to watch. If none are set, check all tenant environments.'
-            )
-            ->addOption(
                 'jobs-before-exit',
                 'j',
                 InputOption::VALUE_REQUIRED,
@@ -130,10 +98,11 @@ class JobDispatcherCommand extends EndlessContainerAwareCommand
                 'i',
                 InputOption::VALUE_NONE,
                 'Ignore errors and keep command alive'
-            );
+            )
+        ;
     }
 
-    protected function starting(InputInterface $input, OutputInterface $output)
+    protected function starting(InputInterface $input, OutputInterface $output): void
     {
         parent::starting($input, $output);
 
@@ -151,7 +120,7 @@ class JobDispatcherCommand extends EndlessContainerAwareCommand
         );
     }
 
-    protected function finalize(InputInterface $input, OutputInterface $output)
+    protected function finalize(InputInterface $input, OutputInterface $output): void
     {
         $processDurationSeconds = (int)round(microtime(true) - $this->processStartedTime);
 
@@ -169,10 +138,12 @@ class JobDispatcherCommand extends EndlessContainerAwareCommand
         parent::finalize($input, $output);
     }
 
-    protected function execute(InputInterface $input, OutputInterface $output)
+    protected function execute(InputInterface $input, OutputInterface $output): void
     {
-        $environmentList = $this->getEnvironmentList($input->getOption('environmentList'));
-        $this->watchEnvironmentTubes($environmentList);
+        $tube = $this->baseTubeName();
+        $this->logger->debug('Listening to tube: ' . $tube);
+
+        $this->queue->watch($tube);
 
         if (
             is_numeric($input->getOption('queue-timeout'))
@@ -183,7 +154,7 @@ class JobDispatcherCommand extends EndlessContainerAwareCommand
             throw new InvalidArgumentException('--queue-timeout should be >= 0');
         }
 
-        $job = $this->waitForJob($timeout);
+        $job = $this->queue->reserveWithTimeout($timeout);
 
         if ($job === null) {
             $this->logger->debug("Couldn't find job before timeout. Exiting process to be restarted");
@@ -194,7 +165,7 @@ class JobDispatcherCommand extends EndlessContainerAwareCommand
         $this->jobsProcessed++;
 
         $payload = $this->getPayload($job);
-        $tenant = $this->getTenantFromTubeName($payload['tube']);
+
         $currentAttempt = $payload['currentAttempt'] ?? 1;
         $maxAttempts = $payload['maxAttempts'] ?? $payload['maxRetries'] ?? 1;
         $jobId = $payload['id'] ?? $job->getId() ?? 'N/A';
@@ -213,7 +184,7 @@ class JobDispatcherCommand extends EndlessContainerAwareCommand
             [
                 'beanstalkId' => $job->getId(),
                 'jobId' => $jobId,
-                'environment' => $tenant,
+                'environment' => $payload['environment'],
                 'tube' => $payload['tube'],
                 'eventName' => $payload['eventName'],
                 'currentAttempt' => $currentAttempt,
@@ -223,8 +194,12 @@ class JobDispatcherCommand extends EndlessContainerAwareCommand
         );
 
         try {
-            $return = $this->runJobForTenant(
-                $tenant,
+            if (! isset($payload['environment'])) {
+                throw new InvalidArgumentException("Job has no environment set");
+            }
+
+            $return = $this->runJobInEnvironment(
+                $payload['environment'],
                 $payload['eventName'],
                 $payload['event'],
                 $ttr,
@@ -244,7 +219,7 @@ class JobDispatcherCommand extends EndlessContainerAwareCommand
                     [
                         'beanstalkId' => $job->getId(),
                         'jobId' => $jobId,
-                        'environment' => $tenant,
+                        'environment' => $payload['environment'],
                         'tube' => $payload['tube'],
                         'eventName' => $payload['eventName'],
                         'exitCode' => $return,
@@ -257,6 +232,7 @@ class JobDispatcherCommand extends EndlessContainerAwareCommand
 
                 $this->bury($job);
                 $output->write('X');
+
                 return;
             }
 
@@ -272,7 +248,7 @@ class JobDispatcherCommand extends EndlessContainerAwareCommand
                     [
                         'beanstalkId' => $job->getId(),
                         'jobId' => $jobId,
-                        'environment' => $tenant,
+                        'environment' => $payload['environment'],
                         'tube' => $payload['tube'],
                         'eventName' => $payload['eventName'],
                         'exitCode' => $return,
@@ -284,6 +260,7 @@ class JobDispatcherCommand extends EndlessContainerAwareCommand
                 );
                 $this->bury($job);
                 $output->write('X');
+
                 return;
             }
 
@@ -299,10 +276,11 @@ class JobDispatcherCommand extends EndlessContainerAwareCommand
 
                 $delay = $this->backoffStrategy->getDelay($currentAttempt);
 
-                $this->queue->putInTube(
-                    $payload['tube'],
+                $this->queue->useTube($payload['tube']);
+                $this->queue->put(
                     json_encode(
                         [
+                            'environment' => $payload['environment'],
                             'eventName' => $payload['eventName'],
                             'event' => $payload['event'],
                             'tube' => $payload['tube'],
@@ -326,7 +304,7 @@ class JobDispatcherCommand extends EndlessContainerAwareCommand
                     [
                         'beanstalkId' => $job->getId(),
                         'jobId' => $jobId,
-                        'environment' => $tenant,
+                        'environment' => $payload['environment'],
                         'tube' => $payload['tube'],
                         'eventName' => $payload['eventName'],
                         'exitCode' => $return,
@@ -351,7 +329,7 @@ class JobDispatcherCommand extends EndlessContainerAwareCommand
                 [
                     'beanstalkId' => $job->getId(),
                     'jobId' => $jobId,
-                    'environment' => $tenant,
+                    'environment' => $payload['environment'],
                     'tube' => $payload['tube'],
                     'eventName' => $payload['eventName'],
                     'durationSeconds' => microtime(true) - $jobStartedTime,
@@ -365,6 +343,7 @@ class JobDispatcherCommand extends EndlessContainerAwareCommand
             // bury the job as re-trying likely won't get us anywhere
             $this->bury($job);
             $output->write('E');
+
             return;
         }
 
@@ -377,7 +356,7 @@ class JobDispatcherCommand extends EndlessContainerAwareCommand
             [
                 'beanstalkId' => $job->getId(),
                 'jobId' => $jobId,
-                'environment' => $tenant,
+                'environment' => $payload['environment'],
                 'tube' => $payload['tube'],
                 'eventName' => $payload['eventName'],
                 'exitCode' => $return,
@@ -397,7 +376,7 @@ class JobDispatcherCommand extends EndlessContainerAwareCommand
      * @param InputInterface $input
      * @param OutputInterface $output
      */
-    protected function finishIteration(InputInterface $input, OutputInterface $output)
+    protected function finishIteration(InputInterface $input, OutputInterface $output): void
     {
         parent::finishIteration($input, $output);
 
@@ -407,87 +386,13 @@ class JobDispatcherCommand extends EndlessContainerAwareCommand
     }
 
     /**
-     * Returns the name of the beanstalk tube to listen to for a given environment code
-     *
-     * @param $environmentCode
-     *
-     * @return string
-     */
-    private function generateTubeName($environmentCode): string
-    {
-        return $this->baseTubeName() . $environmentCode;
-    }
-
-    /**
      * Returns the base tube name that's prefixed to all tubs before the environment name in Beanstalk.
      *
      * @return string
      */
     private function baseTubeName(): string
     {
-        $tube = $this->getContainer()->getParameter('vivait_delayed_event.queue.configuration.tube');
-
-        return str_replace($this->kernel->getEnvironment(), '', $tube);
-    }
-
-    /**
-     * Return the environment name from a given tube name.
-     * @param string $tubeName
-     * @return string
-     */
-    private function getTenantFromTubeName(string $tubeName): string
-    {
-        return str_replace($this->baseTubeName(), '', $tubeName);
-    }
-
-    /**
-     * Returns an array of Tenant environments that we want to use.
-     *
-     * @return array
-     */
-    private function getTenantEnvironments(): array
-    {
-        $tenantList = [];
-
-        /** @var Tenant $tenant */
-        foreach ($this->kernel->getAllTenants() as $tenant) {
-            $tenantList[] = self::TENANT_ENVIRONMENT_PREFIX . $tenant->getKey();
-        }
-
-        return $tenantList;
-    }
-
-    /**
-     * Watches the tubes for the given array of environments.
-     *
-     * @param string[] $environmentList
-     */
-    private function watchEnvironmentTubes(array $environmentList = []): void
-    {
-        foreach ($environmentList as $environment) {
-            $tubeName = $this->generateTubeName($environment);
-            $this->logger->debug('Listening to tube: ' . $tubeName);
-            $this->queue->watch($tubeName);
-        }
-    }
-
-    /**
-     * Waits for a job to appear in any of the tubes we are watching.
-     *
-     * @param int $timeout
-     *
-     * @return ?Job
-     */
-    private function waitForJob(int $timeout): ?Job
-    {
-        /** @var bool|Job $job */
-        $job = $this->queue->reserve($timeout);
-
-        if (is_bool($job)) {
-            $job = null;
-        }
-
-        return $job;
+        return $this->getContainer()->getParameter('vivait_delayed_event.queue.configuration.tube');
     }
 
     /**
@@ -503,15 +408,9 @@ class JobDispatcherCommand extends EndlessContainerAwareCommand
 
     private function getSymfonyConsole(): string
     {
-        // 2.x
-        $sfConsole = realpath($this->kernel->getRootDir() . '/console');
-        if($sfConsole) {
-            return $sfConsole;
-        }
-
-        // 3.x
-        $sfConsole = realpath($this->kernel->getRootDir() . '/../bin/console');
-        if($sfConsole) {
+        // 4.x
+        $sfConsole = realpath($this->kernel->getProjectDir() . '/bin/console');
+        if ($sfConsole) {
             return $sfConsole;
         }
 
@@ -521,7 +420,7 @@ class JobDispatcherCommand extends EndlessContainerAwareCommand
     /**
      * Calls the vivait:worker:process_job command for the given environment to process a job in their tube.
      *
-     * @param string $environmentCode
+     * @param string $environment
      * @param string $eventName
      * @param string $encodedSerializedEvent
      * @param int $ttr This is the time to run set by pheanstalk.
@@ -531,8 +430,8 @@ class JobDispatcherCommand extends EndlessContainerAwareCommand
      * @return int|null
      * @throws Exception
      */
-    private function runJobForTenant(
-        string $environmentCode,
+    private function runJobInEnvironment(
+        string $environment,
         string $eventName,
         string $encodedSerializedEvent,
         int $ttr,
@@ -547,14 +446,14 @@ class JobDispatcherCommand extends EndlessContainerAwareCommand
             $eventName,
             $encodedEvent,
             $jobId,
-            '--env=' . $environmentCode,
+            '--env=' . $environment,
         ];
 
-        if (!$this->kernel->isDebug()) {
+        if (! $this->kernel->isDebug()) {
             $processCommand[] = '--no-debug';
         }
 
-        $process = new Process(implode(' ', $processCommand));
+        $process = new Process($processCommand);
 
         /**
          * TTR is the time in which the job will become visible to other workers. This can cause duplicate processing
@@ -572,7 +471,7 @@ class JobDispatcherCommand extends EndlessContainerAwareCommand
         } catch (Exception $exception) {
             $this->logger->error($exception->getMessage());
 
-            if (!$ignoreErrors) {
+            if (! $ignoreErrors) {
                 $this->logger->error('Re-throwing previous trace');
                 throw $exception;
             }
@@ -580,20 +479,6 @@ class JobDispatcherCommand extends EndlessContainerAwareCommand
             // Any other exceptions should be considered a hard fail
             return ProcessJobCommand::JOB_HARD_FAIL;
         }
-    }
-
-    /**
-     * @param array|null $optionTenants
-     *
-     * @return array
-     */
-    private function getEnvironmentList(array $optionTenants = null): ?array
-    {
-        if (count($optionTenants) === 0) {
-            return $this->getTenantEnvironments();
-        }
-
-        return $optionTenants;
     }
 
     /**

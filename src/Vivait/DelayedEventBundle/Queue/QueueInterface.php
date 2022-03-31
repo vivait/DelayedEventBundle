@@ -1,50 +1,26 @@
 <?php
-/*
- * Copyright CloseToMe 2011/2012
- * Released under the The MIT License
- */
 
 namespace Vivait\DelayedEventBundle\Queue;
 
-
 use DateInterval;
 
-/**
- * Interface QueueInterface
- * @package Vivait\DelayedEventBundle\Queue
- */
 interface QueueInterface {
 
-    /**
-     * @param $eventName
-     * @param $data
-     * @param DateInterval|null $delay
-     * @param int $currentAttempt
-     * @return mixed
-     */
-    public function put($eventName, $data, DateInterval $delay = null, $currentAttempt = 1);
+    public function put(string $environment, string $eventName, $data, DateInterval $delay = null, int $currentAttempt = 1): void;
 
     /**
      * @param null $wait_timeout Maximum time in seconds to wait for a job
      * @return null|Job
      */
-    public function get($wait_timeout = null);
+    public function get($wait_timeout = null): ?Job;
 
     /**
      * @param bool $pending Include pending jobs
      * @return bool
      */
-    public function hasWaiting($pending = false);
+    public function hasWaiting(bool $pending = false): bool;
 
-    /**
-     * @param Job $job
-     * @return mixed
-     */
-    public function delete(Job $job);
+    public function delete(Job $job): void;
 
-    /**
-     * @param Job $job
-     * @return mixed
-     */
-    public function bury(Job $job);
+    public function bury(Job $job): void;
 }

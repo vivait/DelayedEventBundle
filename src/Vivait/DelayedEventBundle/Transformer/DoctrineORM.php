@@ -1,9 +1,9 @@
 <?php
 namespace Vivait\DelayedEventBundle\Transformer;
 
-use Doctrine\Common\Persistence\ManagerRegistry;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\UnitOfWork;
+use Doctrine\Persistence\ManagerRegistry;
 use OutOfBoundsException;
 use ReflectionProperty;
 

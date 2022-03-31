@@ -4,9 +4,9 @@ namespace Vivait\DelayedEventBundle\Queue;
 
 use DateInterval;
 use DateTimeImmutable;
-use Pheanstalk\PheanstalkInterface;
+use Pheanstalk\Contract\PheanstalkInterface;
 use Psr\Log\LoggerInterface;
-use Ramsey\Uuid\Uuid;
+use Symfony\Component\Uid\Factory\UuidFactory;
 use Vivait\DelayedEventBundle\Event\PriorityAwareEvent;
 use Vivait\DelayedEventBundle\Event\RetryableEvent;
 use Vivait\DelayedEventBundle\Event\SelfDelayingEvent;
@@ -15,32 +15,21 @@ use Vivait\DelayedEventBundle\Queue\Exception\JobException;
 use Vivait\DelayedEventBundle\Serializer\Exception\SerializerException;
 use Vivait\DelayedEventBundle\Serializer\SerializerInterface;
 
-/**
- * Class Beanstalkd
- * @package Vivait\DelayedEventBundle\Queue
- */
 class Beanstalkd implements QueueInterface
 {
-    protected $beanstalk;
-    protected $tube;
-
     public const DEFAULT_TTR = 60;
 
-    /**
-     * @var SerializerInterface
-     */
-    private $serializer;
-
-    /**
-     * @var LoggerInterface
-     */
-    private $logger;
-
-    private $ttr;
+    protected PheanstalkInterface $beanstalk;
+    protected string $tube;
+    private SerializerInterface $serializer;
+    private LoggerInterface $logger;
+    private int $ttr;
+    private UuidFactory $uuidFactory;
 
     /**
      * @param LoggerInterface $logger
      * @param SerializerInterface $serializer
+     * @param UuidFactory $uuidFactory
      * @param PheanstalkInterface $beanstalk
      * @param string $tube
      * @param int $ttr The length of time in seconds which a process has to complete
@@ -48,24 +37,21 @@ class Beanstalkd implements QueueInterface
     public function __construct(
         LoggerInterface $logger,
         SerializerInterface $serializer,
-        $beanstalk,
-        $tube = 'delayed_events',
-        $ttr = self::DEFAULT_TTR
+        UuidFactory $uuidFactory,
+        PheanstalkInterface$beanstalk,
+        string $tube = 'delayed_events',
+        int $ttr = self::DEFAULT_TTR
+
     ) {
         $this->logger = $logger;
         $this->beanstalk = $beanstalk;
         $this->tube = $tube;
         $this->ttr = $ttr;
         $this->serializer = $serializer;
+        $this->uuidFactory = $uuidFactory;
     }
 
-    /**
-     * @param $eventName
-     * @param $event
-     * @param DateInterval|null $delay
-     * @param int $currentAttempt
-     */
-    public function put($eventName, $event, DateInterval $delay = null, $currentAttempt = 1)
+    public function put(string $environment, string $eventName, $event, DateInterval $delay = null, $currentAttempt = 1): void
     {
         $job = $this->serializer->serialize($event);
 
@@ -95,15 +81,16 @@ class Beanstalkd implements QueueInterface
 
         // Note: We make a delay of at least a second to give doctrine change to commit any transactions
         // This is caused by delaying an entity from a doctrine hook
-        $seconds = max(IntervalCalculator::convertDateIntervalToSeconds($delay), 1);
+        $delay = max(IntervalCalculator::convertDateIntervalToSeconds($delay), 1);
 
-        $jobId = (string)Uuid::uuid4();
+        $jobUuid = $this->uuidFactory->randomBased()->create();
 
-        $beanstalkdId = $this->beanstalk->putInTube(
-            $this->tube,
+        $this->beanstalk->useTube($this->tube);
+        $beanstalkdId = $this->beanstalk->put(
             json_encode(
                 [
-                    'id' => $jobId,
+                    'id' => $jobUuid,
+                    'environment' => $environment,
                     'eventName' => $eventName,
                     'event' => $job,
                     'tube' => $this->tube,
@@ -113,37 +100,34 @@ class Beanstalkd implements QueueInterface
                 ]
             ),
             $priority,
-            $seconds,
+            $delay,
             $this->ttr
         );
 
         $this->logger->info(
             sprintf(
                 'Job [%s] has been added to the queue',
-                $jobId
+                $jobUuid
             ),
             [
                 'beanstalkId' => $beanstalkdId,
-                'jobId' => $jobId,
+                'jobId' => $jobUuid,
                 'tube' => $this->tube,
                 'eventName' => $eventName,
+                'environment' => $environment,
                 'priority' => $priority,
-                'delaySeconds' => $seconds,
+                'delaySeconds' => $delay,
                 'ttr' => $this->ttr
             ]
         );
     }
 
-    /**
-     * @param null $wait_timeout
-     * @return false|Job|null
-     */
-    public function get($wait_timeout = null)
+    public function get($wait_timeout = null): ?Job
     {
         $job = $this->beanstalk->reserveFromTube($this->tube, $wait_timeout);
 
         if (!$job) {
-            return false;
+            return null;
         }
 
         $data = json_decode($job->getData(), true);
@@ -151,37 +135,27 @@ class Beanstalkd implements QueueInterface
         try {
             $unserialized = $this->serializer->deserialize($data['event']);
         } catch (SerializerException $exception) {
-            $job = new Job($job->getId(), $data['eventName'], null);
+            $job = new Job($job->getId(), $data['environment'], $data['eventName'], null);
 
             throw new JobException($job, 'Unserialization of job failed', 0, $exception);
         }
 
-        return new Job($job->getId(), $data['eventName'], $unserialized);
+        return new Job($job->getId(), $data['environment'], $data['eventName'], $unserialized);
     }
 
-    /**
-     * @param false $pending
-     * @return bool
-     */
-    public function hasWaiting($pending = false)
+    public function hasWaiting($pending = false): bool
     {
         $stats = $this->beanstalk->statsTube($this->tube);
 
         return $stats['current-jobs-ready'] > 0 || $stats['current-jobs-delayed'] > 0 || ($pending && $stats['current-jobs-reserved'] > 0);
     }
 
-    /**
-     * @param Job $job
-     */
-    public function delete(Job $job)
+    public function delete(Job $job): void
     {
         $this->beanstalk->delete($job);
     }
 
-    /**
-     * @param Job $job
-     */
-    public function bury(Job $job)
+    public function bury(Job $job): void
     {
         $this->beanstalk->bury($job);
     }

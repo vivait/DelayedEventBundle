@@ -3,20 +3,7 @@
 namespace Vivait\DelayedEventBundle\Registry;
 
 use OutOfBoundsException;
-use Symfony\Component\DependencyInjection\ContainerInterface;
-use Symfony\Component\DependencyInjection\Definition;
-use Symfony\Component\EventDispatcher\ContainerAwareEventDispatcher;
-use Symfony\Component\EventDispatcher\Event;
-use Symfony\Component\EventDispatcher\EventDispatcher;
-use Symfony\Component\EventDispatcher\EventDispatcherInterface;
-use Symfony\Component\EventDispatcher\EventSubscriberInterface;
-use Vivait\DelayedEventBundle\IntervalCalculator;
-use Vivait\DelayedEventBundle\Queue\QueueInterface;
 
-/**
- * Class DelayedEventsRegistry
- * @package Vivait\DelayedEventBundle\Registry
- */
 class DelayedEventsRegistry
 {
     /**

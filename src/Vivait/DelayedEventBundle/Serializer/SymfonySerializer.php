@@ -2,14 +2,8 @@
 namespace Vivait\DelayedEventBundle\Serializer;
 
 use Symfony\Component\Serializer\Encoder\JsonEncoder;
-use Symfony\Component\Serializer\Encoder\XmlEncoder;
-use Symfony\Component\Serializer\Normalizer\DenormalizerInterface;
-use Symfony\Component\Serializer\Normalizer\GetSetMethodNormalizer;
-use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
-use Symfony\Component\Serializer\Normalizer\PropertyNormalizer;
 use Symfony\Component\Serializer\Serializer;
-use Symfony\Component\Serializer\Tests\Normalizer\PropertyNormalizerTest;
-use Vivait\DelayedEventBundle\Transformer\TransformerInterface;
+use Symfony\Contracts\EventDispatcher\Event;
 
 /**
  * Class SymfonySerializer
@@ -17,10 +11,7 @@ use Vivait\DelayedEventBundle\Transformer\TransformerInterface;
  */
 class SymfonySerializer implements SerializerInterface
 {
-    /**
-     * @var Serializer
-     */
-    private $serializer;
+    private Serializer $serializer;
 
     public function __construct(array $normalizers = [])
     {
@@ -43,6 +34,6 @@ class SymfonySerializer implements SerializerInterface
      */
     public function deserialize($serializedData)
     {
-        return $this->serializer->deserialize($serializedData, 'Symfony\Component\EventDispatcher\Event', 'json');
+        return $this->serializer->deserialize($serializedData, Event::class, 'json');
     }
 }

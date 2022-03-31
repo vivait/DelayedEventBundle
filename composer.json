@@ -1,43 +1,52 @@
 {
-    "name": "vivait/delayed-event-bundle",
-    "description": "A bundle that delays events for a configurable time period (i.e. 24 hours)",
-    "license": "MIT",
-    "authors": [
-        {
-            "name": "Lewis Wright",
-            "email": "lewis@vivait.co.uk"
-        }
-    ],
-    "minimum-stability": "dev",
-    "prefer-stable": true,
-    "require": {
-        "php": "^7.2 | ^8.0",
-        "ext-json": "*",
-        "symfony/framework-bundle": "~2.8|~3.4|~4.4",
-        "wrep/daemonizable-command": "~1.2.5|~2.0",
-        "symfony/monolog-bundle": "^2.8|~3.0",
-        "pda/pheanstalk": "^3.0.0",
-        "ramsey/uuid": "^3.8",
-        "vivait/backoff": "^1.0"
-    },
-    "require-dev": {
-        "videlalvaro/php-amqplib": "~2.2",
-        "leezy/pheanstalk-bundle": "^3.3.0",
-        "phpspec/phpspec": "~2.0",
-        "phpunit/phpunit": "3.7.*",
-        "behat/behat": "~2.5",
-        "matthiasnoback/symfony-config-test": "~1.0",
-        "doctrine/doctrine-bundle": "~1.2",
-        "doctrine/orm": "~2.2",
-        "indigophp/doctrine-annotation-autoload": "0.1.*@dev"
-    },
-    "config": {
-        "bin-dir": "bin"
-    },
-    "autoload": {
-        "psr-0": {
-            "Vivait\\DelayedEventBundle\\": "src/",
-            "Tests\\Vivait\\DelayedEventBundle\\" : ""
-        }
+  "name": "vivait/delayed-event-bundle",
+  "description": "A bundle that delays events for a configurable time period (i.e. 24 hours)",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Lewis Wright",
+      "email": "lewis@vivait.co.uk"
     }
+  ],
+  "minimum-stability": "dev",
+  "prefer-stable": true,
+  "require": {
+    "php": "^7.4|^8.0",
+    "ext-json": "*",
+    "symfony/framework-bundle": "^4.4",
+    "symfony/dependency-injection": "^4.4",
+    "symfony/config": "^4.4",
+    "symfony/console": "^4.4",
+    "symfony/process": "^4.4",
+    "symfony/event-dispatcher": "^4.4",
+    "wrep/daemonizable-command": "~3.1",
+    "symfony/monolog-bundle": "~3.0",
+    "leezy/pheanstalk-bundle": "^3.0|^4.0",
+    "symfony/uid": "^5.2",
+    "vivait/backoff": "^1.0"
+  },
+  "require-dev": {
+    "symfony/symfony": "^4.4",
+    "videlalvaro/php-amqplib": "~2.2",
+    "phpunit/phpunit": "^9.0",
+    "behat/behat": "^3.0",
+    "matthiasnoback/symfony-config-test": "^4.0",
+    "doctrine/doctrine-bundle": "^2.0",
+    "doctrine/orm": "~2.2",
+    "yogarine/doctrine-annotation-autoload": "^0",
+    "symfony/phpunit-bridge": "^6.0"
+  },
+  "config": {
+    "bin-dir": "vendor/bin"
+  },
+  "autoload": {
+    "psr-4": {
+      "Vivait\\DelayedEventBundle\\": "src/Vivait/DelayedEventBundle"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Tests\\Vivait\\DelayedEventBundle\\": "Tests/Vivait/DelayedEventBundle"
+    }
+  }
 }

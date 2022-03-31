@@ -33,7 +33,7 @@ services:
             - '@Vivait\Backoff\Strategies\AbstractBackoffStrategy'
 
     Vivait\DelayedEventBundle\Command\ProcessJobCommand:
-        class: Vivait\DelayedEventBundle\Command\ProcessJobCommand
+        class: Vivait\DelayedEventBundle\Command\ProcessJobCommand.github
         tags:
             - { name: console.command }
             - { name: monolog.logger, channel: worker }

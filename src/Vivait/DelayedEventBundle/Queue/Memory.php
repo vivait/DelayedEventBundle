@@ -4,7 +4,6 @@ namespace Vivait\DelayedEventBundle\Queue;
 
 use DateInterval;
 use Vivait\DelayedEventBundle\IntervalCalculator;
-use Vivait\DelayedEventBundle\Serializer\SerializerInterface;
 
 /**
  * @internal Used only for testing
@@ -13,24 +12,17 @@ class Memory implements QueueInterface
 {
     private $jobs = [];
 
-    /**
-     * @param $eventName
-     * @param $event
-     * @param DateInterval|null $delay
-     * @param int $currentAttempt
-     * @return mixed|void
-     */
-    public function put($eventName, $event, DateInterval $delay = null, $currentAttempt = 1)
+    public function put(string $environment, string $eventName, $event, DateInterval $delay = null, $currentAttempt = 1): void
     {
         $seconds = time() - IntervalCalculator::convertDateIntervalToSeconds($delay);
-        $this->jobs[$seconds][] = new Job(uniqid(), $eventName, $event);
+        $this->jobs[$seconds][] = new Job(uniqid('', true), $environment, $eventName, $event);
     }
 
     /**
      * @param null $wait_timeout
      * @return Job|null
      */
-    public function get($wait_timeout = null)
+    public function get($wait_timeout = null): ?Job
     {
         $currentTime = key($this->jobs);
 
@@ -56,7 +48,7 @@ class Memory implements QueueInterface
      * @param Job $job
      * @return mixed|void
      */
-    public function delete(Job $job)
+    public function delete(Job $job): void
     {
         foreach ($this->jobs as $delay => $jobs) {
             if (($key = array_search($job, $jobs)) !== false) {
@@ -69,7 +61,7 @@ class Memory implements QueueInterface
      * @param Job $job
      * @return mixed|void
      */
-    public function bury(Job $job)
+    public function bury(Job $job): void
     {
         foreach ($this->jobs as $delay => $jobs) {
             if (($key = array_search($job, $jobs)) !== false) {
@@ -84,7 +76,7 @@ class Memory implements QueueInterface
      * @param bool $pending
      * @return boolean
      */
-    public function hasWaiting($pending = false)
+    public function hasWaiting($pending = false): bool
     {
         return count($this->jobs) > 0;
     }

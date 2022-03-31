@@ -2,7 +2,8 @@
 
 namespace Tests\Vivait\DelayedEventBundle;
 
-use Matthias\SymfonyConfigTest\PhpUnit\AbstractConfigurationTestCase;
+use Matthias\SymfonyConfigTest\PhpUnit\ConfigurationTestCaseTrait;
+use PHPUnit\Framework\TestCase;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Vivait\DelayedEventBundle\DependencyInjection\Configuration;
 
@@ -10,8 +11,10 @@ use Vivait\DelayedEventBundle\DependencyInjection\Configuration;
  * Class ConfigurationTest
  * @package Tests\Vivait\DelayedEventBundle
  */
-class ConfigurationTest extends AbstractConfigurationTestCase
+class ConfigurationTest extends TestCase
 {
+    use ConfigurationTestCaseTrait;
+
     /**
      * Return the instance of ConfigurationInterface that should be used by the
      * Configuration-specific assertions in this test-case

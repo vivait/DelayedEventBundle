@@ -1,18 +1,14 @@
 <?php
 namespace Vivait\DelayedEventBundle\Normalizer;
 
-use Doctrine\Common\Persistence\ManagerRegistry;
 use Doctrine\ORM\UnitOfWork;
+use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\Serializer\Normalizer\DenormalizerInterface;
 use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
 
-/**
- * Class DoctrineORMNormalizer
- * @package Vivait\DelayedEventBundle\Normalizer
- */
 class DoctrineORMNormalizer implements NormalizerInterface, DenormalizerInterface
 {
-    private $doctrine;
+    private ManagerRegistry $doctrine;
 
     public function __construct(ManagerRegistry $doctrine)
     {

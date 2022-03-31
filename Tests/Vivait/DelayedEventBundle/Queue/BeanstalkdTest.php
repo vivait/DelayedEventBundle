@@ -6,26 +6,32 @@ namespace Tests\Vivait\DelayedEventBundle\Queue;
 
 use DateInterval;
 use DateTimeImmutable;
-use Pheanstalk\PheanstalkInterface;
-use PHPUnit_Framework_MockObject_MockObject;
-use PHPUnit_Framework_TestCase;
+use Pheanstalk\Contract\PheanstalkInterface;
+use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
-use Symfony\Component\EventDispatcher\Event;
+use Symfony\Component\Uid\Factory\RandomBasedUuidFactory;
+use Symfony\Component\Uid\Factory\UuidFactory;
+use Symfony\Component\Uid\Uuid;
+use Symfony\Component\Uid\UuidV4;
+use Symfony\Contracts\EventDispatcher\Event;
 use Vivait\DelayedEventBundle\Event\PriorityAwareEvent;
 use Vivait\DelayedEventBundle\Event\SelfDelayingEvent;
 use Vivait\DelayedEventBundle\Queue\Beanstalkd;
 use Vivait\DelayedEventBundle\Serializer\SerializerInterface;
+
 use function json_encode;
 
 /**
  * Class BeanstalkdTest
  * @package Tests\Vivait\DelayedEventBundle\Queue
  */
-class BeanstalkdTest extends PHPUnit_Framework_TestCase
+class BeanstalkdTest extends TestCase
 {
+    const TEST_ENVIRONMENT = 'test';
 
     /**
-     * @var PHPUnit_Framework_MockObject_MockObject|PheanstalkInterface
+     * @var MockObject|PheanstalkInterface
      */
     private $pheanstalk;
 
@@ -35,12 +41,12 @@ class BeanstalkdTest extends PHPUnit_Framework_TestCase
     private $queue;
 
     /**
-     * @var PHPUnit_Framework_MockObject_MockObject|SerializerInterface
+     * @var MockObject|SerializerInterface
      */
     private $serializer;
 
     /**
-     * @var PHPUnit_Framework_MockObject_MockObject|LoggerInterface
+     * @var MockObject|LoggerInterface
      */
     private $logger;
 
@@ -48,20 +54,39 @@ class BeanstalkdTest extends PHPUnit_Framework_TestCase
     {
         $this->logger = $this
             ->getMockBuilder(LoggerInterface::class)
-            ->getMock()
-        ;
+            ->getMock();
 
         $this->serializer = $this
             ->getMockBuilder(SerializerInterface::class)
-            ->getMock()
-        ;
+            ->getMock();
 
         $this->pheanstalk = $this
             ->getMockBuilder(PheanstalkInterface::class)
-            ->getMock()
+            ->getMock();
+
+        $randomUuidFactory = $this
+            ->getMockBuilder(RandomBasedUuidFactory::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+
+        $randomUuidFactory
+            ->expects(self::once())
+            ->method('create')
+            ->willReturn(Uuid::fromString('149fba39-d67f-4d21-958f-64d3e2d87126'))
         ;
 
-        $this->queue = new Beanstalkd($this->logger, $this->serializer, $this->pheanstalk);
+        $this->uuidFactory = $this
+            ->getMockBuilder(UuidFactory::class)
+            ->getMock();
+
+        $this->uuidFactory
+            ->expects(self::once())
+            ->method('randomBased')
+            ->willReturn($randomUuidFactory)
+        ;
+
+
+        $this->queue = new Beanstalkd($this->logger, $this->serializer, $this->uuidFactory, $this->pheanstalk);
     }
 
     /**
@@ -83,16 +108,26 @@ class BeanstalkdTest extends PHPUnit_Framework_TestCase
 
         $this->pheanstalk
             ->expects(self::once())
-            ->method('putInTube')
+            ->method('useTube')
             ->with(
                 'delayed_events',
+            )
+        ;
+
+        $this->pheanstalk
+            ->expects(self::once())
+            ->method('put')
+            ->with(
                 json_encode(
                     [
+                        'id' => '149fba39-d67f-4d21-958f-64d3e2d87126',
+                        'environment' => 'test',
                         'eventName' => $eventName,
                         'event' => $serialize,
                         'tube' => 'delayed_events',
-                        'maxRetries' => 1,
+                        'maxAttempts' => 1,
                         'currentAttempt' => 1,
+                        'ttr' => 60,
                     ]
                 ),
                 1234,
@@ -100,7 +135,7 @@ class BeanstalkdTest extends PHPUnit_Framework_TestCase
             )
         ;
 
-        $this->queue->put($eventName, $event, new DateInterval('P2Y4DT6H8M'));
+        $this->queue->put(self::TEST_ENVIRONMENT, $eventName, $event, new DateInterval('P2Y4DT6H8M'));
     }
 
     /**
@@ -122,16 +157,26 @@ class BeanstalkdTest extends PHPUnit_Framework_TestCase
 
         $this->pheanstalk
             ->expects(self::once())
-            ->method('putInTube')
+            ->method('useTube')
             ->with(
                 'delayed_events',
+            )
+        ;
+
+        $this->pheanstalk
+            ->expects(self::once())
+            ->method('put')
+            ->with(
                 json_encode(
                     [
+                        'id' => '149fba39-d67f-4d21-958f-64d3e2d87126',
+                        'environment' => 'test',
                         'eventName' => $eventName,
                         'event' => $serialize,
                         'tube' => 'delayed_events',
-                        'maxRetries' => 1,
+                        'maxAttempts' => 1,
                         'currentAttempt' => 1,
+                        'ttr' => 60,
                     ]
                 ),
                 PheanstalkInterface::DEFAULT_PRIORITY,
@@ -139,7 +184,7 @@ class BeanstalkdTest extends PHPUnit_Framework_TestCase
             )
         ;
 
-        $this->queue->put($eventName, $event, new DateInterval('P2Y4DT6H8M'));
+        $this->queue->put(self::TEST_ENVIRONMENT, $eventName, $event, new DateInterval('P2Y4DT6H8M'));
     }
 
     /**
@@ -162,23 +207,29 @@ class BeanstalkdTest extends PHPUnit_Framework_TestCase
 
         $this->pheanstalk
             ->expects(self::once())
-            ->method('putInTube')
+            ->method('useTube')
             ->with(
                 'delayed_events',
+            )
+        ;
+
+        $this->pheanstalk
+            ->expects(self::once())
+            ->method('put')
+            ->with(
                 $this->anything(),
                 1234,
                 500
             )
         ;
 
-        $this->queue->put($eventName, $event, new DateInterval('P2Y4DT6H8M'));
+        $this->queue->put(self::TEST_ENVIRONMENT, $eventName, $event, new DateInterval('P2Y4DT6H8M'));
     }
 
 
     private function createEvent(int $priority): Event
     {
-        return new class($priority) extends Event implements PriorityAwareEvent
-        {
+        return new class($priority) extends Event implements PriorityAwareEvent {
 
             /**
              * @var int
@@ -199,8 +250,7 @@ class BeanstalkdTest extends PHPUnit_Framework_TestCase
 
     private function createSelfDelayingEvent(DateTimeImmutable $eventDateTime): Event
     {
-        return new class($eventDateTime) extends Event implements SelfDelayingEvent, PriorityAwareEvent
-        {
+        return new class($eventDateTime) extends Event implements SelfDelayingEvent, PriorityAwareEvent {
 
             /**
              * @var DateTimeImmutable

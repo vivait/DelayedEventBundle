@@ -2,8 +2,7 @@
 
 namespace Vivait\DelayedEventBundle\Event;
 
-use Symfony\Component\EventDispatcher\Event;
-use Symfony\Component\EventDispatcher\EventDispatcherInterface;
+use Symfony\Contracts\EventDispatcher\Event;
 use Vivait\DelayedEventBundle\IntervalCalculator;
 use Vivait\DelayedEventBundle\Registry\DelayedEventsRegistry;
 use Vivait\DelayedEventBundle\Queue\QueueInterface;
@@ -14,20 +13,19 @@ use Vivait\DelayedEventBundle\Queue\QueueInterface;
  */
 class EventListenerDelayer
 {
-    /** @var \Vivait\DelayedEventBundle\Registry\DelayedEventsRegistry */
-    private $delayedEventsRegistry;
-
-    /** @var  QueueInterface */
-    private $queue;
+    private DelayedEventsRegistry $delayedEventsRegistry;
+    private QueueInterface $queue;
+    private string $environment;
 
     /**
-     * @param \Vivait\DelayedEventBundle\Registry\DelayedEventsRegistry $delayedEventsRegistry
+     * @param DelayedEventsRegistry $delayedEventsRegistry
      * @param QueueInterface $queue
      */
-    public function __construct(DelayedEventsRegistry $delayedEventsRegistry, QueueInterface $queue)
+    public function __construct(DelayedEventsRegistry $delayedEventsRegistry, QueueInterface $queue, string $environment)
     {
         $this->delayedEventsRegistry = $delayedEventsRegistry;
         $this->queue = $queue;
+        $this->environment = $environment;
     }
 
     /**
@@ -38,7 +36,7 @@ class EventListenerDelayer
     public function triggerEvent(Event $event, $eventName) {
         // Get all the listeners for this event
         foreach ($this->delayedEventsRegistry->getDelays($eventName) as $delayedEventName => $delay){
-            $this->queue->put($delayedEventName, $event, IntervalCalculator::convertDelayToInterval($delay));
+            $this->queue->put($this->environment, $delayedEventName, $event, IntervalCalculator::convertDelayToInterval($delay));
         }
     }
 }

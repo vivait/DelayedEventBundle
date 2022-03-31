@@ -3,71 +3,41 @@
 namespace Vivait\DelayedEventBundle\Command;
 
 use Exception;
-use Monolog\Logger;
-use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
+use Psr\Log\LoggerInterface;
+use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\EventDispatcher\EventDispatcherInterface;
-use Symfony\Component\HttpKernel\KernelInterface;
+use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 use Vivait\DelayedEventBundle\Exception\TerminalEventException;
 use Vivait\DelayedEventBundle\Exception\TransientEventException;
-use Vivait\DelayedEventBundle\Serializer\Serializer;
+use Vivait\DelayedEventBundle\Serializer\SerializerInterface;
 
-/**
- * Class ProcessJobCommand
- * @package Vivait\DelayedEventBundle\Command
- */
-class ProcessJobCommand extends ContainerAwareCommand
+class ProcessJobCommand extends Command
 {
 
     public const JOB_SUCCESS = 0;
     public const JOB_SOFT_FAIL = 1;
     public const JOB_HARD_FAIL = 2;
 
-    /**
-     * @var EventDispatcherInterface
-     */
-    private $eventDispatcher;
+    private EventDispatcherInterface $eventDispatcher;
 
-    /**
-     * @var KernelInterface
-     */
-    private $kernel;
+    private LoggerInterface $logger;
 
-    /**
-     * @var Logger
-     */
-    private $logger;
+    private SerializerInterface $serializer;
 
-    /**
-     * @var Serializer
-     */
-    private $serializer;
-
-    /**
-     * @param EventDispatcherInterface $eventDispatcher
-     * @param KernelInterface $kernel
-     * @param Logger $logger
-     * @param Serializer $serializer
-     */
     public function __construct(
         EventDispatcherInterface $eventDispatcher,
-        KernelInterface $kernel,
-        Logger $logger,
-        Serializer $serializer
+        LoggerInterface $logger,
+        SerializerInterface $serializer
     ) {
         $this->eventDispatcher = $eventDispatcher;
-        $this->kernel = $kernel;
         $this->logger = $logger;
         $this->serializer = $serializer;
 
         parent::__construct('vivait:worker:process_job');
     }
 
-    /**
-     * {}
-     */
     protected function configure()
     {
         $this

@@ -1,0 +1,38 @@
+parameters:
+    vivait_delayed_event.queue.configuration.tube: 'delayed-events'
+
+vivait_delayed_event:
+    queue_transport:
+        name: beanstalkd
+        configuration:
+            tube: '%vivait_delayed_event.queue.configuration.tube%'
+            ttr: 300
+
+framework:
+    secret: "IDontLikeIceCream"
+
+services:
+    test_vivait_delayed_event.listener:
+        class: Tests\Vivait\DelayedEventBundle\Mocks\TestListener
+        tags:
+            - { name: delayed_event.event_listener, delay: 0, event: test.event, method: onListenEvent }
+
+    test_vivait_delayed_event.listener.exception:
+        class: Tests\Vivait\DelayedEventBundle\Mocks\TestExceptionListener
+        tags:
+            - { name: delayed_event.event_listener, delay: 0, event: test.event.exception, method: onListenEvent }
+
+    vivait_delayed_event.queue:
+        alias: vivait_delayed_event.queue.beanstalk
+
+    vivait_delayed_event.queue.beanstalk:
+        class: Vivait\DelayedEventBundle\Queue\Beanstalkd
+        tags:
+            - { name: monolog.logger, channel: worker }
+        arguments:
+            - "@logger"
+            - "@vivait_delayed_event.serializer"
+            - "@leezy.pheanstalk"
+            - '%vivait_delayed_event.queue.configuration.tube%'
+            - '%vivait_delayed_event.queue.configuration.ttr%'
+

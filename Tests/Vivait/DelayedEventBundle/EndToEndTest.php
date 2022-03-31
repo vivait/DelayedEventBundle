@@ -2,66 +2,36 @@
 
 namespace Tests\Vivait\DelayedEventBundle;
 
-use PHPUnit_Framework_Assert;
-use PHPUnit_Framework_TestCase;
+use PHPUnit\Framework\Assert;
 use Symfony\Bundle\FrameworkBundle\Console\Application;
+use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Output\BufferedOutput;
-use Symfony\Component\DependencyInjection\ContainerBuilder;
-use Symfony\Component\EventDispatcher\Event;
-use Symfony\Component\EventDispatcher\EventDispatcher;
-use Tests\Vivait\DelayedEventBundle\app\AppKernel;
+use Symfony\Contracts\EventDispatcher\Event;
+use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 use Tests\Vivait\DelayedEventBundle\Mocks\TestExceptionListener;
 use Tests\Vivait\DelayedEventBundle\Mocks\TestListener;
-use Vivait\DelayedEventBundle\EventDispatcher\DelayedEventDispatcher;
+use Tests\Vivait\DelayedEventBundle\src\Kernel;
 
 /**
  * Checks that an end-to-end delayed event works
  */
-class EndToEndTest extends PHPUnit_Framework_TestCase
+class EndToEndTest extends KernelTestCase
 {
-    
-    /**
-     * @var ContainerBuilder
-     */
-    private $container;
+    private Application $application;
+    private EventDispatcherInterface $eventDispatcher;
 
-    /**
-     * @var string
-     */
-    private $consolePath;
-
-    /**
-     * @var Application
-     */
-    private $application;
-
-    /**
-     * @param null|string $consolePath
-     */
-    public function __construct($consolePath = null)
+    protected function setUp(): void
     {
-        parent::__construct();
+        self::bootKernel();
 
-        $this->consolePath = $consolePath ?: __DIR__ .'/app/console.php';
-    }
+        $this->eventDispatcher = self::$container->get('event_dispatcher');
 
-    /**
-     * @return EventDispatcher
-     */
-    private function getDispatcher()
-    {
-        return $this->container->get('event_dispatcher');
-    }
-
-    public function setUp() {
-        $kernel = new AppKernel('test', true);
+        $kernel = new Kernel('test', true);
         $kernel->boot();
 
         $this->application = new Application($kernel);
         $this->application->setAutoExit(false);
-
-        $this->container = $kernel->getContainer();
 
         TestListener::reset();
         TestExceptionListener::reset();
@@ -69,88 +39,88 @@ class EndToEndTest extends PHPUnit_Framework_TestCase
 
     public function testListener()
     {
-        $this->getDispatcher()->dispatch('test.event', new Event());
+        $this->eventDispatcher->dispatch(new Event(), 'test.event');
 
-        PHPUnit_Framework_Assert::assertFalse(TestListener::$hasRan);
+        Assert::assertFalse(TestListener::$hasRan);
 
         $bufferedOutput = new BufferedOutput();
 
-        $options = array('command' => 'vivait:delayed_event:worker', '-t' => 2, '--run-once' => true, '-v' => true);
+        $options = ['command' => 'vivait:worker:run', '--queue-timeout' => 2, '--run-once' => true, '-v' => true];
         $this->application->run(new ArrayInput($options), $bufferedOutput);
 
-        PHPUnit_Framework_Assert::assertContains('Performing job', $bufferedOutput->fetch());
-        PHPUnit_Framework_Assert::assertTrue(TestListener::$hasRan);
+        Assert::assertStringContainsString('Performing job', $bufferedOutput->fetch());
+        Assert::assertTrue(TestListener::$hasRan);
     }
 
     public function testThatAJobWillBeBuriedIfItDoesNotSucceedAfterAllRetriesAreUsed()
     {
-        $this->getDispatcher()->dispatch('test.event.exception', new Event());
+        $this->eventDispatcher->dispatch(new Event(), 'test.event.exception');
 
-        PHPUnit_Framework_Assert::assertEquals(0, TestExceptionListener::$attempt);
+        Assert::assertEquals(0, TestExceptionListener::$attempt);
 
         $bufferedOutput = new BufferedOutput();
 
         $options = [
-            'command' => 'vivait:delayed_event:worker',
-            '-t' => 2,
+            'command' => 'vivait:worker:run',
+            '--queue-timeout' => 2,
             '--run-once' => true,
             '-v' => true,
-            '-r' => 2 // Retry 2 times after the first failure (so it will have 3 attempts total)
+//            '-r' => 2 // Retry 2 times after the first failure (so it will have 3 attempts total)
         ];
 
         $this->application->run(new ArrayInput($options), $bufferedOutput);
-        
+
         $output = $bufferedOutput->fetch();
-        
-        PHPUnit_Framework_Assert::assertContains(
+
+        Assert::assertStringContainsString(
             'Failed to perform event, attempt number 0 with exception: ',
             $output
         );
-        PHPUnit_Framework_Assert::assertContains(
+        Assert::assertStringContainsString(
             'Failed to perform event, attempt number 1 with exception: ',
             $output
         );
-        PHPUnit_Framework_Assert::assertContains(
+        Assert::assertStringContainsString(
             'Failed to perform event, attempt number 2 with exception: ',
             $output
         );
-        PHPUnit_Framework_Assert::assertContains('Burying job', $output);
+        Assert::assertStringContainsString('Burying job', $output);
     }
 
     public function testThatAJobWillSucceedCorrectlyDuringRetries()
     {
-        $this->getDispatcher()->dispatch('test.event.exception', new Event());
+        $this->eventDispatcher->dispatch(new Event(), 'test.event.exception');
 
-        PHPUnit_Framework_Assert::assertEquals(0, TestExceptionListener::$attempt);
+        Assert::assertEquals(0, TestExceptionListener::$attempt);
 
         $bufferedOutput = new BufferedOutput();
 
         $options = [
-            'command' => 'vivait:delayed_event:worker',
-            '-t' => 2,
+            'command' => 'vivait:worker:run',
+            '--queue-timeout' => 2,
             '--run-once' => true,
             '-vvv' => true, // Very verbose mode to include `info` logs
-            '-r' => 3
+//            '-r' => 3
         ];
 
         $this->application->run(new ArrayInput($options), $bufferedOutput);
 
         $output = $bufferedOutput->fetch();
-        PHPUnit_Framework_Assert::assertContains('Job finished successfully and removed', $output);
-        PHPUnit_Framework_Assert::assertTrue(TestExceptionListener::$succeeded);
+        Assert::assertStringContainsString('Job finished successfully and removed', $output);
+        Assert::assertTrue(TestExceptionListener::$succeeded);
     }
 
     public function testThatNoRetriesWillOccurIfTheRetryOptionWasNotSet()
     {
-        $this->getDispatcher()->dispatch('test.event.exception', new Event());
+        $this->eventDispatcher->dispatch(new Event(), 'test.event.exception');
 
-        PHPUnit_Framework_Assert::assertEquals(0, TestExceptionListener::$attempt);
+        Assert::assertEquals(0, TestExceptionListener::$attempt);
 
         $bufferedOutput = new BufferedOutput();
 
         $options = [
-            'command' => 'vivait:delayed_event:worker',
-            '-t' => 2,
+            'command' => 'vivait:worker:run',
+            '--queue-timeout' => 2,
             '--run-once' => true,
             '-v' => true
         ];
@@ -159,10 +129,10 @@ class EndToEndTest extends PHPUnit_Framework_TestCase
 
         $output = $bufferedOutput->fetch();
 
-        PHPUnit_Framework_Assert::assertContains(
+        Assert::assertStringContainsString(
             'Failed to perform event, attempt number 0 with exception: ',
             $output
         );
-        PHPUnit_Framework_Assert::assertContains('Burying job', $output);
+        Assert::assertStringContainsString('Burying job', $output);
     }
 }

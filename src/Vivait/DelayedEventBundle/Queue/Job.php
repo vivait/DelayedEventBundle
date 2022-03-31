@@ -2,70 +2,41 @@
 
 namespace Vivait\DelayedEventBundle\Queue;
 
-use Symfony\Component\EventDispatcher\Event;
+use Symfony\Contracts\EventDispatcher\Event;
 
-/**
- * Class Job
- * @package Vivait\DelayedEventBundle\Queue
- */
 class Job implements JobInterface
 {
-    /**
-     * @var string
-     */
-    private $eventName;
+    private string $eventName;
 
-    /**
-     * @var Event
-     */
-    private $event;
+    private Event $event;
 
     /**
      * @var mixed
      */
     private $id;
 
-    /**
-     * @var int
-     */
-    private $attempts;
+    private int $attempts;
 
-    /**
-     * @var int
-     */
-    private $maxAttempts;
+    private int $maxAttempts;
 
-    /**
-     * Job constructor.
-     * @param $id
-     * @param $eventName
-     * @param $event
-     * @param int $maxAttempts
-     * @param int $attempts
-     */
-    public function __construct($id, $eventName, $event, $maxAttempts = 1, $attempts = 1)
+    private string $environment;
+
+    public function __construct($id, string $environment, string $eventName, Event $event, int $maxAttempts = 1, int $attempts = 1)
     {
         $this->eventName = $eventName;
         $this->event = $event;
         $this->id = $id;
         $this->attempts = $attempts;
         $this->maxAttempts = $maxAttempts;
+        $this->environment = $environment;
     }
 
-    /**
-     * Gets the event name
-     * @return string
-     */
-    public function getEventName()
+    public function getEventName(): string
     {
         return $this->eventName;
     }
 
-    /**
-     * Gets the event
-     * @return Event
-     */
-    public function getEvent()
+    public function getEvent(): Event
     {
         return $this->event;
     }
@@ -79,19 +50,18 @@ class Job implements JobInterface
         return $this->id;
     }
 
-    /**
-     * @return int
-     */
-    public function getAttempts()
+    public function getAttempts(): int
     {
         return $this->attempts;
     }
 
-    /**
-     * @return int
-     */
-    public function getMaxAttempts()
+    public function getMaxAttempts(): int
     {
         return $this->maxAttempts;
+    }
+
+    public function getEnvironment(): string
+    {
+        return $this->environment;
     }
 }
