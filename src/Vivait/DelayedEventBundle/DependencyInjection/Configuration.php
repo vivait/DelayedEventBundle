@@ -1,34 +1,27 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Vivait\DelayedEventBundle\DependencyInjection;
 
 use Symfony\Component\Config\Definition\Builder\TreeBuilder;
 use Symfony\Component\Config\Definition\ConfigurationInterface;
-use Symfony\Component\DependencyInjection\ContainerInterface;
 
-/**
- * This is the class that validates and merges configuration from your app/config files
- *
- * To learn more see {@link http://symfony.com/doc/current/cookbook/bundles/extension.html#cookbook-bundles-extension-config-class}
- */
 class Configuration implements ConfigurationInterface
 {
-    /**
-     * {}
-     */
-    public function getConfigTreeBuilder()
+
+    public function getConfigTreeBuilder(): TreeBuilder
     {
-        $treeBuilder = new TreeBuilder();
-        $rootNode = $treeBuilder->root('vivait_delayed_event');
+        $treeBuilder = new TreeBuilder('vivait_delayed_event');
+        $rootNode = $treeBuilder->getRootNode();
 
         $rootNode
             ->children()
                 ->arrayNode('queue_transport')
                     ->beforeNormalization()
                         ->ifString()
-                        ->then(function ($v) { return array('name' => $v); })
+                        ->then(fn($v) => array('name' => $v))
                     ->end()
-//                    ->useAttributeAsKey('name')
                     ->children()
                         ->scalarNode('name')
                             ->isRequired()
@@ -36,17 +29,7 @@ class Configuration implements ConfigurationInterface
                         ->end()
                         ->variableNode('configuration')->end()
                     ->end()
-//                    ->validate()
-//                    ->ifTrue(function($value) { return !$this->container->hasDefinition('vivait_inspector.queue.'. $value); })
-//                        ->thenInvalid('Invalid queue transport "%s"')
-//                    ->end()
                 ->end()
-//                ->scalarNode('serializer')
-////                    ->validate()
-////                    ->ifTrue(function($value) { return !$this->container->hasDefinition('vivait_inspector.serializer.'. $value); })
-////                        ->thenInvalid('Invalid serializer "%s"')
-////                    ->end()
-//                ->end()
             ->end()
         ->end();
 
