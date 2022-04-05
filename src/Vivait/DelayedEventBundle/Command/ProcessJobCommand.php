@@ -9,6 +9,7 @@ use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
+use Throwable;
 use Vivait\DelayedEventBundle\Exception\TerminalEventException;
 use Vivait\DelayedEventBundle\Exception\TransientEventException;
 use Vivait\DelayedEventBundle\Serializer\SerializerInterface;
@@ -75,7 +76,7 @@ class ProcessJobCommand extends Command
         }
         try {
             $event = $this->serializer->deserialize($event);
-        } catch (\Throwable $exception) {
+        } catch (Throwable $exception) {
             $this->logger->critical(
                 "Event couldn't be deserialized",
                 [
@@ -106,7 +107,7 @@ class ProcessJobCommand extends Command
     private function performJob($jobId, $eventName, $event)
     {
         try {
-            $this->eventDispatcher->dispatch($eventName, $event);
+            $this->eventDispatcher->dispatch($event, $eventName);
         } catch (TerminalEventException $exception) {
             // Unwrap inner exception that caused the terminal exception
             $exception = $exception->getPrevious();
@@ -135,7 +136,7 @@ class ProcessJobCommand extends Command
             );
 
             return self::JOB_SOFT_FAIL;
-        } catch (\Throwable $exception) {
+        } catch (Throwable $exception) {
             $this->logger->error(
                 'Job threw an unhandled exception',
                 [

@@ -32,7 +32,10 @@ services:
         arguments:
             - "@logger"
             - "@vivait_delayed_event.serializer"
+            - '@Symfony\Component\Uid\Factory\UuidFactory'
             - "@leezy.pheanstalk"
             - '%vivait_delayed_event.queue.configuration.tube%'
             - '%vivait_delayed_event.queue.configuration.ttr%'
 
+    Vivait\Backoff\Strategies\AbstractBackoffStrategy:
+        class: Vivait\Backoff\Strategies\NoBackoffStrategy

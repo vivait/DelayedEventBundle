@@ -5,5 +5,5 @@ services:
   vivait_delayed_event.queue.memory:
     class: Vivait\DelayedEventBundle\Queue\Memory
     arguments:
-      - @vivait_delayed_event.serializer
+      - "@vivait_delayed_event.serializer"
 

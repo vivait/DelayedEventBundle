@@ -2,6 +2,7 @@
 
 namespace Tests\Vivait\DelayedEventBundle;
 
+use Pheanstalk\Pheanstalk;
 use PHPUnit\Framework\Assert;
 use Symfony\Bundle\FrameworkBundle\Console\Application;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
@@ -11,7 +12,11 @@ use Symfony\Contracts\EventDispatcher\Event;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 use Tests\Vivait\DelayedEventBundle\Mocks\TestExceptionListener;
 use Tests\Vivait\DelayedEventBundle\Mocks\TestListener;
+use Tests\Vivait\DelayedEventBundle\src\Event\RetryEvent;
 use Tests\Vivait\DelayedEventBundle\src\Kernel;
+use Throwable;
+
+use function substr;
 
 /**
  * Checks that an end-to-end delayed event works
@@ -37,86 +42,103 @@ class EndToEndTest extends KernelTestCase
         TestExceptionListener::reset();
     }
 
-    public function testListener()
+    public function tearDown(): void
+    {
+        /** @var Pheanstalk $pheanstalk */
+        $pheanstalk = self::$container->get('leezy.pheanstalk');
+
+        // clear out any lingering jobs
+
+        $job = $pheanstalk->peekReady();
+        $count = 0;
+        while (($job !== null) && ($count < 1000)) {
+            try {
+                $pheanstalk->delete($job);
+            } catch (Throwable $thrown) {
+            }
+
+            $job = $pheanstalk->peekReady();
+            $count++;
+        }
+
+        $job = $pheanstalk->peekDelayed();
+        $count = 0;
+        while (($job !== null) && ($count < 1000)) {
+            try {
+                $pheanstalk->delete($job);
+            } catch (Throwable $thrown) {
+            }
+
+            $job = $pheanstalk->peekDelayed();
+            $count++;
+        }
+    }
+
+    /**
+     * @test
+     */
+    public function itWillCallTheCorrectListenerAfterDelay(): void
     {
         $this->eventDispatcher->dispatch(new Event(), 'test.event');
 
-        Assert::assertFalse(TestListener::$hasRan);
+        $options = ['command' => 'vivait:worker:run', '--queue-timeout' => 2, '--run-once' => true, '-v' => true];
 
-        $bufferedOutput = new BufferedOutput();
+        $result = $this->runCommand($options);
+
+        self::assertSame(0, $result['code']);
+        self::assertSame('.', $result['text']);
+    }
+
+    /**
+     * @test
+     */
+    public function itWillBuryJobIfItDoesNotSucceedAfterAllRetriesAreUsed(): void
+    {
+        $this->eventDispatcher->dispatch(new RetryEvent(), 'test.event.exception');
+
+        self::assertEquals(0, TestExceptionListener::$attempt);
 
         $options = ['command' => 'vivait:worker:run', '--queue-timeout' => 2, '--run-once' => true, '-v' => true];
-        $this->application->run(new ArrayInput($options), $bufferedOutput);
 
-        Assert::assertStringContainsString('Performing job', $bufferedOutput->fetch());
-        Assert::assertTrue(TestListener::$hasRan);
+        $result = $this->runCommand($options);
+        self::assertSame(0, $result['code']);
+        self::assertMatchesRegularExpression(
+            '/has soft-failed and will be retried.+currentAttempt" => 1,"maxAttempts" => 3/',
+            $result['text'],
+        );
+        self::assertSame('x', $this->lastCharacter($result['text']));
+
+        // retry 1
+        $result = $this->runCommand($options);
+        self::assertSame(0, $result['code']);
+        self::assertMatchesRegularExpression(
+            '/has soft-failed and will be retried.+currentAttempt" => 2,"maxAttempts" => 3/',
+            $result['text'],
+        );
+        self::assertSame('x', $this->lastCharacter($result['text']));
+
+        // retry 2
+        $result = $this->runCommand($options);
+        self::assertSame(0, $result['code']);
+        self::assertMatchesRegularExpression(
+            '/has soft-failed but has reached the last attempt.+currentAttempt" => 3,"maxAttempts" => 3/',
+            $result['text'],
+        );
+        self::assertSame('X', $this->lastCharacter($result['text']));
+
+        // retry 3 (shouldn't pick anything up)
+        $result = $this->runCommand($options);
+
+        self::assertSame(0, $result['code']);
+        self::assertEmpty($result['text']);
     }
 
-    public function testThatAJobWillBeBuriedIfItDoesNotSucceedAfterAllRetriesAreUsed()
+    /**
+     * @test
+     */
+    public function noRetriesWillOccurIfTheRetryOptionWasNotSet(): void
     {
         $this->eventDispatcher->dispatch(new Event(), 'test.event.exception');
-
-        Assert::assertEquals(0, TestExceptionListener::$attempt);
-
-        $bufferedOutput = new BufferedOutput();
-
-        $options = [
-            'command' => 'vivait:worker:run',
-            '--queue-timeout' => 2,
-            '--run-once' => true,
-            '-v' => true,
-//            '-r' => 2 // Retry 2 times after the first failure (so it will have 3 attempts total)
-        ];
-
-        $this->application->run(new ArrayInput($options), $bufferedOutput);
-
-        $output = $bufferedOutput->fetch();
-
-        Assert::assertStringContainsString(
-            'Failed to perform event, attempt number 0 with exception: ',
-            $output
-        );
-        Assert::assertStringContainsString(
-            'Failed to perform event, attempt number 1 with exception: ',
-            $output
-        );
-        Assert::assertStringContainsString(
-            'Failed to perform event, attempt number 2 with exception: ',
-            $output
-        );
-        Assert::assertStringContainsString('Burying job', $output);
-    }
-
-    public function testThatAJobWillSucceedCorrectlyDuringRetries()
-    {
-        $this->eventDispatcher->dispatch(new Event(), 'test.event.exception');
-
-        Assert::assertEquals(0, TestExceptionListener::$attempt);
-
-        $bufferedOutput = new BufferedOutput();
-
-        $options = [
-            'command' => 'vivait:worker:run',
-            '--queue-timeout' => 2,
-            '--run-once' => true,
-            '-vvv' => true, // Very verbose mode to include `info` logs
-//            '-r' => 3
-        ];
-
-        $this->application->run(new ArrayInput($options), $bufferedOutput);
-
-        $output = $bufferedOutput->fetch();
-        Assert::assertStringContainsString('Job finished successfully and removed', $output);
-        Assert::assertTrue(TestExceptionListener::$succeeded);
-    }
-
-    public function testThatNoRetriesWillOccurIfTheRetryOptionWasNotSet()
-    {
-        $this->eventDispatcher->dispatch(new Event(), 'test.event.exception');
-
-        Assert::assertEquals(0, TestExceptionListener::$attempt);
-
-        $bufferedOutput = new BufferedOutput();
 
         $options = [
             'command' => 'vivait:worker:run',
@@ -125,14 +147,34 @@ class EndToEndTest extends KernelTestCase
             '-v' => true
         ];
 
-        $this->application->run(new ArrayInput($options), $bufferedOutput);
-
-        $output = $bufferedOutput->fetch();
-
-        Assert::assertStringContainsString(
-            'Failed to perform event, attempt number 0 with exception: ',
-            $output
+        $result = $this->runCommand($options);
+        self::assertSame(0, $result['code']);
+        self::assertMatchesRegularExpression(
+            '/has soft-failed but has reached the last attempt and will be buried/',
+            $result['text'],
         );
-        Assert::assertStringContainsString('Burying job', $output);
+        self::assertSame('X', $this->lastCharacter($result['text']));
+    }
+
+    /**
+     * @param array $options
+     *
+     * @return array{code: int, text: string}
+     */
+    private function runCommand(array $options): array
+    {
+        $output = new BufferedOutput();
+        $input = new ArrayInput($options);
+
+        $result = $this->application->run($input, $output);
+
+        $outputText = $output->fetch();
+
+        return ['code' => $result, 'text' => $outputText];
+    }
+
+    private function lastCharacter(string $input): string
+    {
+        return substr($input, -1);
     }
 }

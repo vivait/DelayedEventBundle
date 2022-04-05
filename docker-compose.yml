@@ -1,0 +1,7 @@
+version: '3.8'
+services:
+    beanstalkd:
+        image: schickling/beanstalkd
+        stop_signal: SIGKILL
+        ports:
+            - "11300:11300"

@@ -1,13 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Vivait\DelayedEventBundle\Mocks;
 
 use Exception;
 
-/**
- * Class TestExceptionListener
- * @package Tests\Vivait\DelayedEventBundle\Mocks
- */
 class TestExceptionListener
 {
     /**
@@ -21,31 +19,27 @@ class TestExceptionListener
     public static $succeeded = false;
 
     /**
-     * @param mixed $args
-     * 
      * @throws Exception
      */
-    public function onListenEvent($args)
+    public function onListenEvent(): void
     {
         $throw = false;
-        
+
         if (self::$attempt < 3) {
             $throw = true;
         }
-        
+
         self::$attempt++;
-        
+
         if ($throw) {
             throw new Exception();
         }
-        
+
         self::$succeeded = true;
     }
 
-    /**
-     * Reset
-     */
-    public static function reset() {
+    public static function reset(): void
+    {
         self::$attempt = 0;
         self::$succeeded = false;
     }

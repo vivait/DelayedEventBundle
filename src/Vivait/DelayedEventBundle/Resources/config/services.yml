@@ -20,6 +20,7 @@ services:
         arguments:
             - "@vivait_delayed_event.registry"
             - "@vivait_delayed_event.queue"
+            - '%kernel.environment%'
 
     Vivait\DelayedEventBundle\Command\JobDispatcherCommand:
         class: Vivait\DelayedEventBundle\Command\JobDispatcherCommand
@@ -33,12 +34,13 @@ services:
             - '@Vivait\Backoff\Strategies\AbstractBackoffStrategy'
 
     Vivait\DelayedEventBundle\Command\ProcessJobCommand:
-        class: Vivait\DelayedEventBundle\Command\ProcessJobCommand.github
+        class: Vivait\DelayedEventBundle\Command\ProcessJobCommand
         tags:
             - { name: console.command }
             - { name: monolog.logger, channel: worker }
         arguments:
             - "@event_dispatcher"
-            - "@kernel"
             - '@logger'
             - "@vivait_delayed_event.serializer"
+
+    Symfony\Component\Uid\Factory\UuidFactory: ~

@@ -7,38 +7,35 @@ use OutOfBoundsException;
 class DelayedEventsRegistry
 {
     /**
-     * @var array
+     * @var array<string, array<string, mixed>>
      */
     private $delays;
 
     /**
-     * @param $eventName
-     * @param $delayedEventName
-     * @param $delay
+     * @param string $eventName
+     * @param string $delayedEventName
+     * @param mixed $delay
      */
-    public function addDelay($eventName, $delayedEventName, $delay) {
+    public function addDelay(string $eventName, string $delayedEventName, $delay)
+    {
         $this->delays[$eventName][$delayedEventName] = $delay;
     }
 
     /**
-     * @param $eventName
-     * @return string[][]
+     * @param string $eventName
+     *
+     * @return array<string, mixed>
      */
-    public function getDelays($eventName)
+    public function getDelays(string $eventName): array
     {
-        if (!$this->hasDelays($eventName)) {
+        if (! $this->hasDelays($eventName)) {
             throw new OutOfBoundsException('No listeners found for event: '. $eventName);
         }
 
         return $this->delays[$eventName];
     }
 
-
-    /**
-     * @param $eventName
-     * @return bool
-     */
-    public function hasDelays($eventName)
+    public function hasDelays(string $eventName): bool
     {
         return (isset($this->delays[$eventName]));
     }
