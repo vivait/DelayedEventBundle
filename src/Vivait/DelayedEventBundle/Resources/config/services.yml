@@ -44,3 +44,5 @@ services:
             - "@vivait_delayed_event.serializer"
 
     Symfony\Component\Uid\Factory\UuidFactory: ~
+
+    Vivait\Backoff\Strategies\AbstractBackoffStrategy: ~

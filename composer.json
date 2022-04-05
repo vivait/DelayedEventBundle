@@ -23,7 +23,7 @@
     "symfony/monolog-bundle": "~3.0",
     "leezy/pheanstalk-bundle": "^4.0",
     "symfony/uid": "^5.2",
-    "vivait/backoff": "^1.0"
+    "vivait/backoff": "^1.1"
   },
   "require-dev": {
     "symfony/symfony": "^4.4",

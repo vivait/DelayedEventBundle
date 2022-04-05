@@ -1,18 +1,18 @@
 parameters:
-  vivait_delayed_event.queue.configuration.tube: 'delayed_events'
+    vivait_delayed_event.queue.configuration.tube: 'delayed_events'
 
 services:
-  vivait_delayed_event.queue:
-    alias: vivait_delayed_event.queue.beanstalk
+    vivait_delayed_event.queue:
+        alias: vivait_delayed_event.queue.beanstalk
 
-  vivait_delayed_event.queue.beanstalk:
-    class: Vivait\DelayedEventBundle\Queue\Beanstalkd
-    tags:
-        - { name: monolog.logger, channel: worker }
-    arguments:
-      - "@logger"
-      - "@vivait_delayed_event.serializer"
-      - "@leezy.pheanstalk"
-      - '%vivait_delayed_event.queue.configuration.tube%'
-      - '%vivait_delayed_event.queue.configuration.ttr%'
-
+    vivait_delayed_event.queue.beanstalk:
+        class: Vivait\DelayedEventBundle\Queue\Beanstalkd
+        tags:
+            - { name: monolog.logger, channel: worker }
+        arguments:
+            - "@logger"
+            - "@vivait_delayed_event.serializer"
+            - '@Symfony\Component\Uid\Factory\UuidFactory'
+            - "@leezy.pheanstalk"
+            - '%vivait_delayed_event.queue.configuration.tube%'
+            - '%vivait_delayed_event.queue.configuration.ttr%'
