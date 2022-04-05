@@ -18,10 +18,6 @@ use Wrep\Daemonizable\Command\EndlessContainerAwareCommand;
 
 use function is_numeric;
 
-/**
- * Class JobDispatcherCommand
- * @package Vivait\DelayedEventBundle\Command
- */
 class JobDispatcherCommand extends EndlessContainerAwareCommand
 {
     /**
