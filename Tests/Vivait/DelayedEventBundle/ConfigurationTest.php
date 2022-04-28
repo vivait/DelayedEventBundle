@@ -40,13 +40,34 @@ class ConfigurationTest extends TestCase
         );
     }
 
+    public function testDelayEnabled()
+    {
+        $this->assertConfigurationIsValid(
+            [
+                [
+                    'enabled' => true,
+                ]
+            ]
+        );
+    }
+
+    public function testDelayDisabled()
+    {
+        $this->assertConfigurationIsValid(
+            [
+                [
+                    'enabled' => false,
+                ]
+            ]
+        );
+    }
+
     public function testQueueTransportShort()
     {
         $this->assertConfigurationIsValid(
             [
                 [
                     'queue_transport' => 'test_queue',
-                    //'storage' => 'test_storage'
                 ]
             ]
         );

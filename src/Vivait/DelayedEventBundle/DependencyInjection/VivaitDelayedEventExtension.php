@@ -35,6 +35,10 @@ class VivaitDelayedEventExtension extends ConfigurableExtension
 
         $loader->load(sprintf('queue/%s.yml', $config['queue_transport']['name']));
 
+        if (!$config['enabled']) {
+            $container->setParameter('vivait_delayed_event.enabled', false);
+        }
+
         if (!empty($config['queue_transport']['configuration']) && is_array($config['queue_transport']['configuration'])) {
             foreach ($config['queue_transport']['configuration'] as $key => $value) {
                 $container->setParameter('vivait_delayed_event.queue.configuration.'. $key, $value);

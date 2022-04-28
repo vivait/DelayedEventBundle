@@ -1,4 +1,5 @@
 parameters:
+    vivait_delayed_event.enabled: true
     # vivait_delayed_event.dispatcher.class: Vivait\DelayedEventBundle\EventDispatcher\DelayedEventDispatcher
     vivait_delayed_event.registry.class: Vivait\DelayedEventBundle\Registry\DelayedEventsRegistry
     vivait_delayed_event.serializer.class: Vivait\DelayedEventBundle\Serializer\Serializer

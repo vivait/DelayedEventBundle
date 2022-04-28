@@ -3,8 +3,10 @@
 namespace Vivait\DelayedEventBundle\DependencyInjection;
 
 use InvalidArgumentException;
+use Symfony\Component\DependencyInjection\Argument\ServiceClosureArgument;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
+use Symfony\Component\DependencyInjection\Reference;
 use Vivait\DelayedEventBundle\Event\EventDispatcherMediator;
 
 use function is_string;
@@ -44,8 +46,11 @@ class RegisterListenersPass implements CompilerPassInterface
             return;
         }
 
+        $enabled = $container->getParameter('vivait_delayed_event.enabled');
+        $eventDispatcherDefinition = $container->findDefinition('event_dispatcher');
+
         $mediator = new EventDispatcherMediator(
-            $container->findDefinition('event_dispatcher'),
+            $eventDispatcherDefinition,
             $container->findDefinition($this->delayedEventsRegistry),
             $this->delayer,
         );
@@ -109,13 +114,25 @@ class RegisterListenersPass implements CompilerPassInterface
                     );
                 }
 
-                $mediator->addListener(
-                    $eventName,
-                    $id,
-                    $event['method'],
-                    $priority,
-                    $delay,
-                );
+                if ($enabled) {
+                    $mediator->addListener(
+                        $eventName,
+                        $id,
+                        $event['method'],
+                        $priority,
+                        $delay,
+                    );
+                }
+                else {
+                    $eventDispatcherDefinition->addMethodCall(
+                        'addListener',
+                        [
+                            $eventName,
+                            [new ServiceClosureArgument(new Reference($id)), $event['method']],
+                            $priority,
+                        ],
+                    );
+                }
             }
         }
     }
