@@ -1,39 +1,39 @@
-name: PHP Composer
+name: Delayed Event Bundle Test
 
 on:
-  push:
-    branches: [ master ]
-  pull_request:
-    branches: [ master ]
-
-permissions:
-  contents: read
+    push: ~
+    pull_request: ~
 
 jobs:
-  build:
+    build:
+        runs-on: ${{ matrix.operating-system }}
+        name: PHP ${{ matrix.php }} and Symfony ${{ matrix.symfony }}
+        strategy:
+            fail-fast: false
+            matrix:
+                operating-system: [ ubuntu-latest ]
+                php: ['7.4', '8.0', '8.1' ]
+                symfony: [ '4.4.*' ]
 
-    runs-on: ubuntu-latest
+        services:
+            beanstalkd:
+                image: schickling/beanstalkd
+                ports:
+                    - 11300:11300
 
-    steps:
-    - uses: actions/checkout@v3
+        steps:
+            -   uses: actions/checkout@master
 
-    - name: Validate composer.json and composer.lock
-      run: composer validate --strict
+            -   name: Setup PHP ${{ matrix.php }}
+                uses: shivammathur/setup-php@v2
+                with:
+                    php-version: ${{ matrix.php }}
+                    tools: flex
 
-    - name: Cache Composer packages
-      id: composer-cache
-      uses: actions/cache@v3
-      with:
-        path: vendor
-        key: ${{ runner.os }}-php-${{ hashFiles('**/composer.lock') }}
-        restore-keys: |
-          ${{ runner.os }}-php-
+            -   name: Download dependencies
+                env:
+                    SYMFONY_REQUIRE: ${{ matrix.symfony }}
+                uses: ramsey/composer-install@v1
 
-    - name: Install dependencies
-      run: composer install --prefer-dist --no-progress
-
-    # Add a test script to composer.json, for instance: "test": "vendor/bin/phpunit"
-    # Docs: https://getcomposer.org/doc/articles/scripts.md
-
-    - name: Run test suite
-      run: composer run-script test
+            -   name: Run test suite on PHP ${{ matrix.php }} and Symfony ${{ matrix.symfony }}
+                run: ./vendor/bin/phpunit
