@@ -3,7 +3,7 @@ namespace Vivait\DelayedEventBundle\Serializer;
 
 use Symfony\Component\Serializer\Encoder\JsonEncoder;
 use Symfony\Component\Serializer\Serializer;
-use Symfony\Contracts\EventDispatcher\Event;
+use Symfony\Component\EventDispatcher\Event;
 
 /**
  * Class SymfonySerializer

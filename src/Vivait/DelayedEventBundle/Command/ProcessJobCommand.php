@@ -8,7 +8,7 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Throwable;
 use Vivait\DelayedEventBundle\Exception\TerminalEventException;
 use Vivait\DelayedEventBundle\Exception\TransientEventException;
@@ -107,7 +107,7 @@ class ProcessJobCommand extends Command
     private function performJob($jobId, $eventName, $event)
     {
         try {
-            $this->eventDispatcher->dispatch($event, $eventName);
+            $this->eventDispatcher->dispatch($eventName, $event);
         } catch (TerminalEventException $exception) {
             // Unwrap inner exception that caused the terminal exception
             $exception = $exception->getPrevious();

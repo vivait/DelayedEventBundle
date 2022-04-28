@@ -7,7 +7,7 @@ use PHPUnit\Framework\TestCase;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
 use Symfony\Component\EventDispatcher\EventDispatcher;
-use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Vivait\DelayedEventBundle\DependencyInjection\RegisterListenersPass;
 use Vivait\DelayedEventBundle\DependencyInjection\VivaitDelayedEventExtension;
 use Vivait\DelayedEventBundle\Registry\DelayedEventsRegistry;

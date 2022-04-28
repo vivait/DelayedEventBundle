@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Vivait\DelayedEventBundle\src\Event;
 
-use Symfony\Contracts\EventDispatcher\Event;
+use Symfony\Component\EventDispatcher\Event;
 use Vivait\DelayedEventBundle\Event\RetryableEvent;
 
 class RetryEvent extends Event implements RetryableEvent

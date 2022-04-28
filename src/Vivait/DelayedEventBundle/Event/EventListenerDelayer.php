@@ -3,7 +3,7 @@
 namespace Vivait\DelayedEventBundle\Event;
 
 use Exception;
-use Symfony\Contracts\EventDispatcher\Event;
+use Symfony\Component\EventDispatcher\Event;
 use Vivait\DelayedEventBundle\IntervalCalculator;
 use Vivait\DelayedEventBundle\Registry\DelayedEventsRegistry;
 use Vivait\DelayedEventBundle\Queue\QueueInterface;

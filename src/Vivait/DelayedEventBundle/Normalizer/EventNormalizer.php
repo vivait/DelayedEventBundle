@@ -1,7 +1,7 @@
 <?php
 namespace Vivait\DelayedEventBundle\Normalizer;
 
-use Symfony\Contracts\EventDispatcher\Event;
+use Symfony\Component\EventDispatcher\Event;
 use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
 
 class EventNormalizer implements NormalizerInterface

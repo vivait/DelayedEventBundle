@@ -8,8 +8,8 @@ use Symfony\Bundle\FrameworkBundle\Console\Application;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Output\BufferedOutput;
-use Symfony\Contracts\EventDispatcher\Event;
-use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
+use Symfony\Component\EventDispatcher\Event;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Tests\Vivait\DelayedEventBundle\Mocks\TestExceptionListener;
 use Tests\Vivait\DelayedEventBundle\Mocks\TestListener;
 use Tests\Vivait\DelayedEventBundle\src\Event\RetryEvent;
@@ -30,7 +30,7 @@ class EndToEndTest extends KernelTestCase
     {
         self::bootKernel();
 
-        $this->eventDispatcher = self::$container->get('event_dispatcher');
+        $this->eventDispatcher = self::$kernel->getContainer()->get('event_dispatcher');
 
         $kernel = new Kernel('test', true);
         $kernel->boot();
@@ -45,7 +45,7 @@ class EndToEndTest extends KernelTestCase
     public function tearDown(): void
     {
         /** @var Pheanstalk $pheanstalk */
-        $pheanstalk = self::$container->get('leezy.pheanstalk');
+        $pheanstalk = self::$kernel->getContainer()->get('leezy.pheanstalk');
 
         // clear out any lingering jobs
 
@@ -79,7 +79,7 @@ class EndToEndTest extends KernelTestCase
      */
     public function itWillCallTheCorrectListenerAfterDelay(): void
     {
-        $this->eventDispatcher->dispatch(new Event(), 'test.event');
+        $this->eventDispatcher->dispatch('test.event', new Event());
 
         $options = ['command' => 'vivait:worker:run', '--queue-timeout' => 2, '--run-once' => true, '-v' => true];
 
@@ -94,7 +94,7 @@ class EndToEndTest extends KernelTestCase
      */
     public function itWillBuryJobIfItDoesNotSucceedAfterAllRetriesAreUsed(): void
     {
-        $this->eventDispatcher->dispatch(new RetryEvent(), 'test.event.exception');
+        $this->eventDispatcher->dispatch('test.event.exception', new RetryEvent());
 
         self::assertEquals(0, TestExceptionListener::$attempt);
 
@@ -138,7 +138,7 @@ class EndToEndTest extends KernelTestCase
      */
     public function noRetriesWillOccurIfTheRetryOptionWasNotSet(): void
     {
-        $this->eventDispatcher->dispatch(new Event(), 'test.event.exception');
+        $this->eventDispatcher->dispatch('test.event.exception', new Event());
 
         $options = [
             'command' => 'vivait:worker:run',

@@ -2,7 +2,7 @@
 
 namespace Vivait\DelayedEventBundle\Queue;
 
-use Symfony\Contracts\EventDispatcher\Event;
+use Symfony\Component\EventDispatcher\Event;
 
 class Job implements JobInterface
 {

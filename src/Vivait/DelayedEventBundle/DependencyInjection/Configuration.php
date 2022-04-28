@@ -12,8 +12,9 @@ class Configuration implements ConfigurationInterface
 
     public function getConfigTreeBuilder(): TreeBuilder
     {
-        $treeBuilder = new TreeBuilder('vivait_delayed_event');
-        $rootNode = $treeBuilder->getRootNode();
+        $treeBuilder = new TreeBuilder();
+
+        $rootNode = $treeBuilder->root('vivait_delayed_event');
 
         $rootNode
             ->children()
