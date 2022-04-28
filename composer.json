@@ -29,7 +29,7 @@
         "matthiasnoback/symfony-config-test": "~1.0",
         "doctrine/doctrine-bundle": "~1.2",
         "doctrine/orm": "~2.2",
-        "indigophp/doctrine-annotation-autoload": "0.1.*@dev"
+        "yogarine/doctrine-annotation-autoload": "^0.3.0"
     },
     "config": {
         "bin-dir": "bin",
