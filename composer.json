@@ -32,7 +32,13 @@
         "indigophp/doctrine-annotation-autoload": "0.1.*@dev"
     },
     "config": {
-        "bin-dir": "bin"
+        "bin-dir": "bin",
+        "allow-plugins": {
+            "yogarine/doctrine-annotation-autoload": true
+        }
+    },
+    "scripts": {
+        "test": "bin/phpunit"
     },
     "autoload": {
         "psr-0": {
