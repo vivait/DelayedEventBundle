@@ -9,6 +9,7 @@ use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
+use Symfony\Component\Workflow\Event\Event;
 use Throwable;
 use Vivait\DelayedEventBundle\Exception\TerminalEventException;
 use Vivait\DelayedEventBundle\Exception\TransientEventException;
@@ -100,7 +101,7 @@ class ProcessJobCommand extends Command
     /**
      * @param string $jobId
      * @param string $eventName
-     * @param object $event
+     * @param Event $event
      *
      * @return int
      */

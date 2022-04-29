@@ -122,7 +122,7 @@ class Beanstalkd implements QueueInterface
         );
     }
 
-    public function get($wait_timeout = null): ?Job
+    public function get($wait_timeout = null): ?JobInterface
     {
         $job = $this->beanstalk->reserveFromTube($this->tube, $wait_timeout);
 
@@ -150,12 +150,12 @@ class Beanstalkd implements QueueInterface
         return $stats['current-jobs-ready'] > 0 || $stats['current-jobs-delayed'] > 0 || ($pending && $stats['current-jobs-reserved'] > 0);
     }
 
-    public function delete(Job $job): void
+    public function delete(JobInterface $job): void
     {
         $this->beanstalk->delete($job);
     }
 
-    public function bury(Job $job): void
+    public function bury(JobInterface $job): void
     {
         $this->beanstalk->bury($job);
     }

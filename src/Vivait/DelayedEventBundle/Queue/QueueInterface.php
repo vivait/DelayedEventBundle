@@ -10,9 +10,9 @@ interface QueueInterface {
 
     /**
      * @param null $wait_timeout Maximum time in seconds to wait for a job
-     * @return null|Job
+     * @return null|JobInterface
      */
-    public function get($wait_timeout = null): ?Job;
+    public function get($wait_timeout = null): ?JobInterface;
 
     /**
      * @param bool $pending Include pending jobs
@@ -20,7 +20,7 @@ interface QueueInterface {
      */
     public function hasWaiting(bool $pending = false): bool;
 
-    public function delete(Job $job): void;
+    public function delete(JobInterface $job): void;
 
-    public function bury(Job $job): void;
+    public function bury(JobInterface $job): void;
 }

@@ -20,9 +20,9 @@ class Memory implements QueueInterface
 
     /**
      * @param null $wait_timeout
-     * @return Job|null
+     * @return JobInterface|null
      */
-    public function get($wait_timeout = null): ?Job
+    public function get($wait_timeout = null): ?JobInterface
     {
         $currentTime = key($this->jobs);
 
@@ -45,10 +45,10 @@ class Memory implements QueueInterface
     }
 
     /**
-     * @param Job $job
+     * @param JobInterface $job
      * @return mixed|void
      */
-    public function delete(Job $job): void
+    public function delete(JobInterface $job): void
     {
         foreach ($this->jobs as $delay => $jobs) {
             if (($key = array_search($job, $jobs)) !== false) {
@@ -58,10 +58,10 @@ class Memory implements QueueInterface
     }
 
     /**
-     * @param Job $job
+     * @param JobInterface $job
      * @return mixed|void
      */
-    public function bury(Job $job): void
+    public function bury(JobInterface $job): void
     {
         foreach ($this->jobs as $delay => $jobs) {
             if (($key = array_search($job, $jobs)) !== false) {

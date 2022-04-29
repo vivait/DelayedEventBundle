@@ -4,7 +4,7 @@ namespace Vivait\DelayedEventBundle\Queue\Exception;
 
 use Exception;
 use RuntimeException;
-use Vivait\DelayedEventBundle\Queue\Job;
+use Vivait\DelayedEventBundle\Queue\JobInterface;
 
 /**
  * Class JobException
@@ -16,12 +16,12 @@ class JobException extends RuntimeException
 
     /**
      * JobException constructor.
-     * @param Job $job
+     * @param JobInterface $job
      * @param $message
      * @param int $code
      * @param Exception|null $previous
      */
-    public function __construct(Job $job, $message, $code = 0, Exception $previous = null)
+    public function __construct(JobInterface $job, $message, $code = 0, Exception $previous = null)
     {
         parent::__construct(
             $message,
@@ -34,7 +34,7 @@ class JobException extends RuntimeException
 
     /**
      * Gets job
-     * @return Job
+     * @return JobInterface
      */
     public function getJob()
     {
