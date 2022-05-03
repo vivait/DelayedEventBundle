@@ -70,7 +70,6 @@ class BeanstalkdTest extends TestCase
             ->getMock();
 
         $randomUuidFactory
-            ->expects(self::once())
             ->method('create')
             ->willReturn(Uuid::fromString('149fba39-d67f-4d21-958f-64d3e2d87126'))
         ;
@@ -80,7 +79,6 @@ class BeanstalkdTest extends TestCase
             ->getMock();
 
         $this->uuidFactory
-            ->expects(self::once())
             ->method('randomBased')
             ->willReturn($randomUuidFactory)
         ;
@@ -226,6 +224,22 @@ class BeanstalkdTest extends TestCase
         $this->queue->put(self::TEST_ENVIRONMENT, $eventName, $event, new DateInterval('P2Y4DT6H8M'));
     }
 
+    /**
+     * @test
+     */
+    public function itWillSkipSelfDelayingEventsWithNullDelays(): void
+    {
+        $eventName = 'eventName';
+        $event = $this->createSelfDelayingEvent(null);
+
+        $this->pheanstalk
+            ->expects(self::never())
+            ->method('put')
+        ;
+
+        $this->queue->put(self::TEST_ENVIRONMENT, $eventName, $event, new DateInterval('P2Y4DT6H8M'));
+    }
+
 
     private function createEvent(int $priority): Event
     {
@@ -248,7 +262,7 @@ class BeanstalkdTest extends TestCase
         };
     }
 
-    private function createSelfDelayingEvent(DateTimeImmutable $eventDateTime): Event
+    private function createSelfDelayingEvent(?DateTimeImmutable $eventDateTime): Event
     {
         return new class($eventDateTime) extends Event implements SelfDelayingEvent, PriorityAwareEvent {
 
@@ -257,12 +271,12 @@ class BeanstalkdTest extends TestCase
              */
             private $eventDateTime;
 
-            public function __construct(DateTimeImmutable $eventDateTime)
+            public function __construct(?DateTimeImmutable $eventDateTime)
             {
                 $this->eventDateTime = $eventDateTime;
             }
 
-            public function getDelayedEventDateTime(): DateTimeImmutable
+            public function getDelayedEventDateTime(): ?DateTimeImmutable
             {
                 return $this->eventDateTime;
             }

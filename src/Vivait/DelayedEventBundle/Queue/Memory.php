@@ -12,7 +12,7 @@ class Memory implements QueueInterface
 {
     private $jobs = [];
 
-    public function put(string $environment, string $eventName, $event, DateInterval $delay = null, $currentAttempt = 1): JobInterface
+    public function put(string $environment, string $eventName, $event, DateInterval $delay = null, $currentAttempt = 1): ?JobInterface
     {
         $seconds = time() - IntervalCalculator::convertDateIntervalToSeconds($delay);
         $job = new Job(uniqid('', true), $environment, $eventName, $event);

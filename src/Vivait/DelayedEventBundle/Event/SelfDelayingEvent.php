@@ -7,5 +7,5 @@ use DateTimeImmutable;
 interface SelfDelayingEvent
 {
 
-    public function getDelayedEventDateTime(): DateTimeImmutable;
+    public function getDelayedEventDateTime(): ?DateTimeImmutable;
 }

@@ -51,7 +51,7 @@ class Beanstalkd implements QueueInterface
         $this->uuidFactory = $uuidFactory;
     }
 
-    public function put(string $environment, string $eventName, $event, DateInterval $delay = null, $currentAttempt = 1): JobInterface
+    public function put(string $environment, string $eventName, $event, DateInterval $delay = null, $currentAttempt = 1): ?JobInterface
     {
         $job = $this->serializer->serialize($event);
 
@@ -70,6 +70,11 @@ class Beanstalkd implements QueueInterface
         if ($event instanceof SelfDelayingEvent) {
             $now = new DateTimeImmutable();
             $eventDateTime = $event->getDelayedEventDateTime();
+
+            if (!$eventDateTime) {
+                return null;
+            }
+
             $diff = $now->diff($eventDateTime);
 
             if ($diff === false || $eventDateTime < $now) {
