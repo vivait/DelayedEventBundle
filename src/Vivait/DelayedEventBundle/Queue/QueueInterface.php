@@ -6,7 +6,7 @@ use DateInterval;
 
 interface QueueInterface {
 
-    public function put(string $environment, string $eventName, $data, DateInterval $delay = null, int $currentAttempt = 1): void;
+    public function put(string $environment, string $eventName, $data, DateInterval $delay = null, int $currentAttempt = 1): JobInterface;
 
     /**
      * @param null $wait_timeout Maximum time in seconds to wait for a job

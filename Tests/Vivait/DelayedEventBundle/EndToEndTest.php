@@ -16,6 +16,7 @@ use Tests\Vivait\DelayedEventBundle\src\Event\RetryEvent;
 use Tests\Vivait\DelayedEventBundle\src\Kernel;
 use Throwable;
 
+use Vivait\DelayedEventBundle\Event\JobEvent;
 use function substr;
 
 /**
@@ -155,6 +156,31 @@ class EndToEndTest extends KernelTestCase
         );
         self::assertSame('X', $this->lastCharacter($result['text']));
     }
+
+
+    /**
+     * @test
+     */
+    public function itWillTriggerAnInternalEvent(): void
+    {
+        $triggered = false;
+        $event = new Event();
+
+        $this->eventDispatcher->addListener('vivait_delayed_event.post_queue', function(JobEvent $jobEvent) use (&$triggered, $event) {
+            $triggered = true;
+
+            $this->assertNotNull($jobEvent->getJob()->getId());
+            $this->assertSame($event, $jobEvent->getOriginalEvent());
+        });
+
+        $this->eventDispatcher->dispatch('test.event', $event);
+
+        $options = ['command' => 'vivait:worker:run', '--queue-timeout' => 2, '--run-once' => true, '-v' => true];
+        $this->runCommand($options);
+
+        self::assertTrue($triggered);
+    }
+
 
     /**
      * @param array $options

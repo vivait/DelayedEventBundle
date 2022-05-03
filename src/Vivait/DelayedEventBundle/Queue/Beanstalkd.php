@@ -51,7 +51,7 @@ class Beanstalkd implements QueueInterface
         $this->uuidFactory = $uuidFactory;
     }
 
-    public function put(string $environment, string $eventName, $event, DateInterval $delay = null, $currentAttempt = 1): void
+    public function put(string $environment, string $eventName, $event, DateInterval $delay = null, $currentAttempt = 1): JobInterface
     {
         $job = $this->serializer->serialize($event);
 
@@ -120,6 +120,8 @@ class Beanstalkd implements QueueInterface
                 'ttr' => $this->ttr
             ]
         );
+
+        return new Job($beanstalkdId, $environment, $eventName, $event, $maxAttempts, $currentAttempt);
     }
 
     public function get($wait_timeout = null): ?JobInterface
