@@ -410,6 +410,12 @@ class JobDispatcherCommand extends EndlessContainerAwareCommand
             return $sfConsole;
         }
 
+        // 3.x
+        $sfConsole = realpath($this->kernel->getProjectDir() . '/app/console');
+        if ($sfConsole) {
+            return $sfConsole;
+        }
+
         throw new \RuntimeException('Could not find the Symfony console');
     }
 
