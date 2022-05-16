@@ -5,6 +5,7 @@ namespace Vivait\DelayedEventBundle\Queue;
 use DateInterval;
 use DateTimeImmutable;
 use Pheanstalk\Contract\PheanstalkInterface;
+use Pheanstalk\JobId;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Uid\Factory\UuidFactory;
 use Vivait\DelayedEventBundle\Event\PriorityAwareEvent;
@@ -173,11 +174,11 @@ class Beanstalkd implements QueueInterface
 
     public function delete(JobInterface $job): void
     {
-        $this->beanstalk->delete($job->getId());
+        $this->beanstalk->delete(new JobId((int) $job->getId()));
     }
 
     public function bury(JobInterface $job): void
     {
-        $this->beanstalk->bury($job->getId());
+        $this->beanstalk->bury(new JobId((int) $job->getId()));
     }
 }
