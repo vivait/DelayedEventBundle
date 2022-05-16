@@ -7,7 +7,9 @@ namespace Vivait\DelayedEventBundle\Event;
 use Symfony\Component\EventDispatcher\Event;
 use Vivait\DelayedEventBundle\Queue\JobInterface;
 
-class JobEvent extends Event {
+class JobEvent extends Event
+{
+    const EVENT_NAME = 'vivait_delayed_event.post_queue';
 
     private ?JobInterface $job;
     private Event $originalEvent;

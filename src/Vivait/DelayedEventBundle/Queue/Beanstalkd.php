@@ -72,6 +72,20 @@ class Beanstalkd implements QueueInterface
             $eventDateTime = $event->getDelayedEventDateTime();
 
             if (!$eventDateTime) {
+                $this->logger->info(sprintf(
+                    'No delay specified for event: %s (event obj: %s)',
+                    $eventName,
+                    get_class($event)
+                ),
+                    [
+                        'tube' => $this->tube,
+                        'eventName' => $eventName,
+                        'environment' => $environment,
+                        'priority' => $priority,
+                        'delaySeconds' => $delay,
+                        'ttr' => $this->ttr
+                    ]);
+
                 return null;
             }
 
@@ -91,7 +105,7 @@ class Beanstalkd implements QueueInterface
         $jobUuid = $this->uuidFactory->randomBased()->create();
 
         $this->beanstalk->useTube($this->tube);
-        $beanstalkdId = $this->beanstalk->put(
+        $beanstalkdJob = $this->beanstalk->put(
             json_encode(
                 [
                     'id' => $jobUuid,
@@ -115,7 +129,7 @@ class Beanstalkd implements QueueInterface
                 $jobUuid
             ),
             [
-                'beanstalkId' => $beanstalkdId,
+                'beanstalkId' => $beanstalkdJob->getId(),
                 'jobId' => $jobUuid,
                 'tube' => $this->tube,
                 'eventName' => $eventName,
@@ -126,7 +140,7 @@ class Beanstalkd implements QueueInterface
             ]
         );
 
-        return new Job($beanstalkdId, $environment, $eventName, $event, $maxAttempts, $currentAttempt);
+        return new Job($beanstalkdJob->getId(), $environment, $eventName, $event, $maxAttempts, $currentAttempt);
     }
 
     public function get($wait_timeout = null): ?JobInterface

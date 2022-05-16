@@ -42,7 +42,7 @@ class EventListenerDelayer
                 IntervalCalculator::convertDelayToInterval($delay),
             );
 
-            $this->eventDispatcher->dispatch('vivait_delayed_event.post_queue', new JobEvent($job, $event));
+            $this->eventDispatcher->dispatch(JobEvent::EVENT_NAME, new JobEvent($job, $event));
         }
     }
 }
