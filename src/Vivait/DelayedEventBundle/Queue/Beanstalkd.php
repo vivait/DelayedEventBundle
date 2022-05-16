@@ -173,11 +173,11 @@ class Beanstalkd implements QueueInterface
 
     public function delete(JobInterface $job): void
     {
-        $this->beanstalk->delete($job);
+        $this->beanstalk->delete($job->getId());
     }
 
     public function bury(JobInterface $job): void
     {
-        $this->beanstalk->bury($job);
+        $this->beanstalk->bury($job->getId());
     }
 }
