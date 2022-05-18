@@ -2,6 +2,10 @@ Delayed Event Bundle
 ===============
 Triggers a Symfony event an arbitrary period after the original event
 
+# Which version to use
+1. For Symfony 3 use version 1.x
+2. For Symfony 4+ use version 2.x
+
 # Configure the service
 ```yaml
 vivait_delayed_event:
