@@ -1,5 +1,6 @@
 parameters:
     vivait_delayed_event.queue.configuration.tube: 'delayed-events'
+    test_vivait_delayed_event.listener_file: '%kernel.cache_dir%/test_listener'
 
 vivait_delayed_event:
     queue_transport:
@@ -16,6 +17,8 @@ services:
         class: Tests\Vivait\DelayedEventBundle\Mocks\TestListener
         tags:
             - { name: delayed_event.event_listener, delay: 0, event: test.event, method: onListenEvent }
+        arguments:
+            - '%test_vivait_delayed_event.listener_file%'
 
     test_vivait_delayed_event.listener.exception:
         class: Tests\Vivait\DelayedEventBundle\Mocks\TestExceptionListener

@@ -33,10 +33,7 @@ class EndToEndTest extends KernelTestCase
 
         $this->eventDispatcher = self::$kernel->getContainer()->get('event_dispatcher');
 
-        $kernel = new Kernel('test', true);
-        $kernel->boot();
-
-        $this->application = new Application($kernel);
+        $this->application = new Application(self::$kernel);
         $this->application->setAutoExit(false);
 
         TestListener::reset();
@@ -88,6 +85,39 @@ class EndToEndTest extends KernelTestCase
 
         self::assertSame(0, $result['code']);
         self::assertSame('.', $result['text']);
+    }
+
+    /**
+     * @test
+     */
+    public function itWillHandleMultipleEnvironments(): void
+    {
+        // Create a second kernel with an alternative environment
+        $kernel2 = static::createKernel([
+            'environment' => 'test2'
+        ]);
+        $kernel2->boot();
+
+        $eventDispatcher2 = $kernel2->getContainer()->get('event_dispatcher');
+
+        $test_file = self::$kernel->getContainer()->getParameter('test_vivait_delayed_event.listener_file');
+        $test_file2 = $kernel2->getContainer()->getParameter('test_vivait_delayed_event.listener_file');
+        @unlink($test_file);
+        @unlink($test_file2);
+
+        try {
+            $options = ['command' => 'vivait:worker:run', '--queue-timeout' => 2, '--run-once' => true, '-v' => true];
+
+            $eventDispatcher2->dispatch('test.event', new Event());
+
+            $this->runCommand($options);
+
+            self::assertFileDoesNotExist($test_file);
+            self::assertFileExists($test_file2);
+        }
+        finally {
+            $kernel2->shutdown();
+        }
     }
 
     /**
