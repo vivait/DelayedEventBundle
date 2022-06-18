@@ -48,6 +48,7 @@ class ListenerPassTest extends TestCase
     {
         $this->container
             ->register('test_listener', 'stdClass')
+            ->setPublic(true)
             ->addTag(
                 'delayed_event.event_listener',
                 [
@@ -60,6 +61,7 @@ class ListenerPassTest extends TestCase
 
         $this->container
             ->register('test_listener2', 'stdClass')
+            ->setPublic(true)
             ->addTag(
                 'delayed_event.event_listener',
                 [
@@ -80,6 +82,7 @@ class ListenerPassTest extends TestCase
     {
         $this->container
             ->register('test_listener', 'stdClass')
+            ->setPublic(true)
             ->addTag(
                 'delayed_event.event_listener',
                 [
@@ -92,6 +95,7 @@ class ListenerPassTest extends TestCase
 
         $this->container
             ->register('duplicate_test_listener', 'stdClass')
+            ->setPublic(true)
             ->addTag(
                 'delayed_event.event_listener',
                 [
@@ -104,6 +108,7 @@ class ListenerPassTest extends TestCase
 
         $this->container
             ->register('unique_test_listener', 'stdClass')
+            ->setPublic(true)
             ->addTag(
                 'delayed_event.event_listener',
                 [
@@ -124,6 +129,7 @@ class ListenerPassTest extends TestCase
     {
         $this->container
             ->register('test_listener', 'stdClass')
+            ->setPublic(true)
             ->addTag(
                 'delayed_event.event_listener',
                 [
@@ -148,6 +154,7 @@ class ListenerPassTest extends TestCase
     {
         $this->container
             ->register('test_listener', 'stdClass')
+            ->setPublic(true)
             ->addTag(
                 'delayed_event.event_listener',
                 [
@@ -160,6 +167,7 @@ class ListenerPassTest extends TestCase
 
         $this->container
             ->register('higher_priority_listener', 'stdClass')
+            ->setPublic(true)
             ->addTag(
                 'delayed_event.event_listener',
                 [

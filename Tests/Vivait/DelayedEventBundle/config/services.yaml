@@ -13,6 +13,7 @@ framework:
 
 services:
     test_vivait_delayed_event.listener:
+        public: true
         class: Tests\Vivait\DelayedEventBundle\Mocks\TestListener
         tags:
             - { name: delayed_event.event_listener, delay: 0, event: test.event, method: onListenEvent }

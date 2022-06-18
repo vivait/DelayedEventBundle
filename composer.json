@@ -34,7 +34,8 @@
     "doctrine/doctrine-bundle": "^2.0",
     "doctrine/orm": "~2.2",
     "yogarine/doctrine-annotation-autoload": "^0",
-    "symfony/phpunit-bridge": "^6.0"
+    "symfony/phpunit-bridge": "^6.0",
+    "vimeo/psalm": "^4.23"
   },
   "config": {
     "bin-dir": "vendor/bin"
