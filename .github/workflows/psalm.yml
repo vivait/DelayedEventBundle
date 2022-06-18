@@ -1,0 +1,26 @@
+name: Psalm Static analysis
+
+on: [push, pull_request]
+
+jobs:
+    psalm:
+        name: Psalm
+        runs-on: ubuntu-latest
+        steps:
+            - name: Get Composer Cache Directory
+              id: composer-cache
+              run: |
+                  echo "::set-output name=dir::$(composer config cache-files-dir)"
+            - uses: actions/cache@v3
+              with:
+                  path: ${{ steps.composer-cache.outputs.dir }}
+                  key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+                  restore-keys: |
+                      ${{ runner.os }}-composer-
+            - name: Checkout code
+              uses: actions/checkout@v2
+            - name: Psalm
+              uses: docker://vimeo/psalm-github-actions
+              with:
+                  composer_require_dev: true
+                  composer_ignore_platform_reqs: true

@@ -13,12 +13,12 @@
   "require": {
     "php": "^7.4|^8.0",
     "ext-json": "*",
-    "symfony/framework-bundle": "^4.4",
-    "symfony/dependency-injection": "^4.4",
-    "symfony/config": "^4.4",
-    "symfony/console": "^4.4",
-    "symfony/process": "^4.4",
-    "symfony/event-dispatcher": "^4.4",
+    "symfony/framework-bundle": "^4.4|^5.4",
+    "symfony/dependency-injection": "^4.4|^5.4",
+    "symfony/config": "^4.4|^5.4",
+    "symfony/console": "^4.4|^5.4",
+    "symfony/process": "^4.4|^5.4",
+    "symfony/event-dispatcher": "^4.4|^5.4",
     "wrep/daemonizable-command": "~3.1",
     "symfony/monolog-bundle": "~3.0",
     "leezy/pheanstalk-bundle": "^4.0",
@@ -26,7 +26,7 @@
     "vivait/backoff": "^1.1"
   },
   "require-dev": {
-    "symfony/symfony": "^4.4",
+    "symfony/symfony": "^4.4|^5.4",
     "videlalvaro/php-amqplib": "~2.2",
     "phpunit/phpunit": "^9.0",
     "behat/behat": "^3.0",
@@ -34,7 +34,12 @@
     "doctrine/doctrine-bundle": "^2.0",
     "doctrine/orm": "~2.2",
     "yogarine/doctrine-annotation-autoload": "^0",
-    "symfony/phpunit-bridge": "^6.0"
+    "symfony/phpunit-bridge": "^6.0",
+    "vimeo/psalm": "^4.23",
+    "symfony/polyfill-php74": "^1.26",
+    "symfony/polyfill-php80": "^1.26",
+    "symfony/polyfill-php81": "^1.26",
+    "psalm/plugin-symfony": "^3.1"
   },
   "config": {
     "bin-dir": "vendor/bin"
