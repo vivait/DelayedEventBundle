@@ -21,7 +21,7 @@
     "symfony/event-dispatcher": "^4.4|^5.4",
     "wrep/daemonizable-command": "~3.1",
     "symfony/monolog-bundle": "~3.0",
-    "leezy/pheanstalk-bundle": "^4.0|4.x-dev",
+    "leezy/pheanstalk-bundle": "4.x-dev",
     "symfony/uid": "^5.2",
     "vivait/backoff": "^1.1"
   },
