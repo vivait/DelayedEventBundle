@@ -35,7 +35,10 @@
     "doctrine/orm": "~2.2",
     "yogarine/doctrine-annotation-autoload": "^0",
     "symfony/phpunit-bridge": "^6.0",
-    "vimeo/psalm": "^4.23"
+    "vimeo/psalm": "^4.23",
+    "symfony/polyfill-php74": "^1.26",
+    "symfony/polyfill-php80": "^1.26",
+    "symfony/polyfill-php81": "^1.26"
   },
   "config": {
     "bin-dir": "vendor/bin"
