@@ -42,7 +42,10 @@
     "psalm/plugin-symfony": "^3.1"
   },
   "config": {
-    "bin-dir": "vendor/bin"
+    "bin-dir": "vendor/bin",
+    "allow-plugins": {
+      "yogarine/doctrine-annotation-autoload": true
+    }
   },
   "autoload": {
     "psr-4": {
