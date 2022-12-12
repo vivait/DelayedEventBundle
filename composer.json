@@ -22,7 +22,7 @@
     "wrep/daemonizable-command": "~3.1",
     "symfony/monolog-bundle": "~3.0",
     "leezy/pheanstalk-bundle": "4.x-dev@dev",
-    "symfony/uid": "^5.2",
+    "symfony/uid": "^5.2|^6.0",
     "vivait/backoff": "^1.1"
   },
   "require-dev": {
@@ -42,7 +42,10 @@
     "psalm/plugin-symfony": "^3.1"
   },
   "config": {
-    "bin-dir": "vendor/bin"
+    "bin-dir": "vendor/bin",
+    "allow-plugins": {
+      "yogarine/doctrine-annotation-autoload": true
+    }
   },
   "autoload": {
     "psr-4": {
