@@ -17,6 +17,8 @@ class Configuration implements ConfigurationInterface
 
         $rootNode
             ->children()
+                ->booleanNode('enabled')
+                    ->defaultTrue()
                 ->arrayNode('queue_transport')
                     ->beforeNormalization()
                         ->ifString()

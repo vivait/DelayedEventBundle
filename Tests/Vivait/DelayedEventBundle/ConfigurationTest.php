@@ -80,4 +80,26 @@ class ConfigurationTest extends TestCase
             ]
         );
     }
+
+    public function testEnabledConfiguration()
+    {
+        $this->assertConfigurationIsValid(
+            [
+                [
+                    'enabled' => 'true',
+                ]
+            ]
+        );
+    }
+
+    public function testDisabledConfiguration()
+    {
+        $this->assertConfigurationIsValid(
+            [
+                [
+                    'enabled' => 'false',
+                ]
+            ]
+        );
+    }
 }

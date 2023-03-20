@@ -7,6 +7,7 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Vivait\DelayedEventBundle\Event\EventDispatcherMediator;
 
+use Vivait\DelayedEventBundle\Event\InstantEventDispatcherMediator;
 use function is_string;
 use function preg_replace;
 use function preg_replace_callback;
@@ -44,11 +45,18 @@ class RegisterListenersPass implements CompilerPassInterface
             return;
         }
 
-        $mediator = new EventDispatcherMediator(
-            $container->findDefinition('event_dispatcher'),
-            $container->findDefinition($this->delayedEventsRegistry),
-            $this->delayer,
-        );
+        if ($container->getParameter('vivait_delayed_event.is_enabled') === true) {
+            $mediator = new EventDispatcherMediator(
+                $container->findDefinition('event_dispatcher'),
+                $container->findDefinition($this->delayedEventsRegistry),
+                $this->delayer,
+            );
+        }
+        else {
+            $mediator = new InstantEventDispatcherMediator(
+                $container->findDefinition('event_dispatcher'),
+            );
+        }
 
         foreach ($container->findTaggedServiceIds($this->listenerTag) as $id => $events) {
             $def = $container->getDefinition($id);

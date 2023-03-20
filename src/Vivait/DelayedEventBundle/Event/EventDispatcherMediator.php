@@ -8,7 +8,7 @@ use Symfony\Component\DependencyInjection\Definition;
 use Symfony\Component\DependencyInjection\Reference;
 use Vivait\DelayedEventBundle\IntervalCalculator;
 
-class EventDispatcherMediator
+class EventDispatcherMediator implements EventDispatcherMediatorInterface
 {
     private Definition $eventDispatcherDefinition;
     private Definition $registryDefinition;
