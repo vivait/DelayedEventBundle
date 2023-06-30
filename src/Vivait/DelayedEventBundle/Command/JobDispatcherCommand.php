@@ -200,7 +200,8 @@ class JobDispatcherCommand extends EndlessContainerAwareCommand
                 $payload['event'],
                 $ttr,
                 $input->getOption('ignore-errors'),
-                $jobId
+                $jobId,
+                $job->getId(),
             );
 
             /*
@@ -432,7 +433,8 @@ class JobDispatcherCommand extends EndlessContainerAwareCommand
         string $encodedSerializedEvent,
         int $ttr,
         bool $ignoreErrors,
-        string $jobId
+        string $jobId,
+        int $beanstalkId
     ): ?int {
         $encodedEvent = base64_encode($encodedSerializedEvent);
         $processCommand = [
@@ -442,6 +444,7 @@ class JobDispatcherCommand extends EndlessContainerAwareCommand
             $eventName,
             $encodedEvent,
             $jobId,
+            $beanstalkId,
             '--env=' . $environment,
         ];
 
