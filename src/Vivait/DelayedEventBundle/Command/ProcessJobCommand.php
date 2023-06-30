@@ -12,6 +12,7 @@ use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 use Throwable;
 use Vivait\DelayedEventBundle\Exception\TerminalEventException;
 use Vivait\DelayedEventBundle\Exception\TransientEventException;
+use Vivait\DelayedEventBundle\Job;
 use Vivait\DelayedEventBundle\Serializer\SerializerInterface;
 
 class ProcessJobCommand extends Command
@@ -106,6 +107,8 @@ class ProcessJobCommand extends Command
      */
     private function performJob($jobId, $eventName, $event)
     {
+        Job::$id = $jobId;
+
         try {
             $this->eventDispatcher->dispatch($event, $eventName);
         } catch (TerminalEventException $exception) {
