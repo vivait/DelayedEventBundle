@@ -46,7 +46,9 @@ class ProcessJobCommand extends Command
             ->setDescription('When given a job, it dispatches that job into Symfony to be processed.')
             ->addArgument('eventName', InputArgument::REQUIRED, 'The event name that you want to re-dispatch')
             ->addArgument('event', InputArgument::REQUIRED, 'The event that you want to re-dispatch')
-            ->addArgument('jobId', InputArgument::OPTIONAL, 'Optional ID of the job to track in the logs');
+            ->addArgument('jobId', InputArgument::OPTIONAL, 'Optional ID of the job to track in the logs')
+            ->addArgument('beanstalkId', InputArgument::OPTIONAL, 'Optional ID of the job in beanstalk to poke')
+        ;
     }
 
     /**
@@ -62,6 +64,7 @@ class ProcessJobCommand extends Command
         $encodedEvent = $input->getArgument('event');
         $eventName = $input->getArgument('eventName');
         $jobId = $input->getArgument('jobId') ?? 'N/A';
+        $beanstalkId = $input->getArgument('beanstalkId');
 
         $event = base64_decode($encodedEvent);
         if ($event === false) {
@@ -93,6 +96,7 @@ class ProcessJobCommand extends Command
 
         return $this->performJob(
             $jobId,
+            $beanstalkId,
             $eventName,
             $event
         );
@@ -105,9 +109,10 @@ class ProcessJobCommand extends Command
      *
      * @return int
      */
-    private function performJob($jobId, $eventName, $event)
+    private function performJob($jobId, $beanstalkId, $eventName, $event)
     {
         Job::$id = $jobId;
+        Job::$beanstalkId = $beanstalkId;
 
         try {
             $this->eventDispatcher->dispatch($event, $eventName);

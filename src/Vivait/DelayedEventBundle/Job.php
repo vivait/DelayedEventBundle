@@ -13,4 +13,5 @@ final class Job
      * The ID of the job currently being processed (null indicates no job).
      */
     public static ?string $id = null;
+    public static ?int $beanstalkId = null;
 }
